@@ -161,12 +161,13 @@ function mergeStatusLine(settings, dryRun) {
 
 function isCavemanStatusLine(sl) {
   const cmd = (sl && sl.command) || '';
+  if (typeof cmd !== 'string') return false;
   // 匹配 npm 安装路径（caveman-codebuddy/scripts/statusline.js）与 marketplace
-  // 缓存路径（caveman-codebuddy/<version>/scripts/statusline.js）—— 用宿主名 +
-  // 脚本名作锚点，避免中间的版本目录破坏子串匹配。
-  return typeof cmd === 'string' &&
-    cmd.includes('caveman-codebuddy/') &&
-    cmd.includes('scripts/statusline.js');
+  // 缓存路径（caveman-codebuddy/<version>/scripts/statusline.js）。锚定为连续路径
+  // 段，拒绝两个子串在命令中任意分布导致的误判（否则会把指向别处的 command
+  // 错认成 caveman 自己的并静默覆盖）。
+  return cmd.includes('caveman-codebuddy/scripts/statusline.js') ||
+    /caveman-codebuddy\/[^/]+\/scripts\/statusline\.js/.test(cmd);
 }
 
 function stripStatusLine(settings) {

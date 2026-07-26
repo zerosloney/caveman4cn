@@ -18,7 +18,7 @@
 
 const path = require('path');
 const fs = require('fs');
-const { execSync } = require('child_process');
+const { execFileSync } = require('child_process');
 
 // ── Paths ───────────────────────────────────────────────────────────────────
 
@@ -91,8 +91,11 @@ function getLifetimeSavings() {
 
 /** Get git branch name for a directory. Returns null if not in a git repo. */
 function getGitBranch(cwd) {
+  if (!cwd) return null;
   try {
-    const out = execSync('git -C "' + cwd + '" branch --show-current', {
+    // execFileSync 数组参数不经 shell —— cwd 作为字面参数传给 git，杜绝命令注入
+    // （cwd 来自不可信 stdin JSON，字符串拼接 execSync 可被裂开追加任意命令）。
+    const out = execFileSync('git', ['-C', cwd, 'branch', '--show-current'], {
       encoding: 'utf-8',
       timeout: 3000,
       stdio: ['ignore', 'pipe', 'ignore'],
