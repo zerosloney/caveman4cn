@@ -28,7 +28,7 @@ const CODEBUDDY_PLUGIN_DIR = path.join(
 const INSTALL_DIR = path.join(CODEBUDDY_PLUGIN_DIR, PLUGIN_NAME);
 
 // 源文件：插件目录
-const SRC_DIR = path.join(PROJECT_ROOT, 'plugins', 'codebuddy');
+const SRC_DIR = path.join(PROJECT_ROOT, 'plugins', 'caveman-codebuddy');
 
 function isNpmInstall() {
   return __dirname.includes('node_modules');

@@ -13,7 +13,7 @@ How to run:
    ```
 2. Otherwise run standalone (self-contained, supports stdin execution):
    ```
-   curl -fsSL https://raw.githubusercontent.com/zerosloney/caveman4cn/main/plugins/caveman/tools/caveman-init.js | node - $ARGUMENTS
+   curl -fsSL https://raw.githubusercontent.com/zerosloney/caveman4cn/main/plugins/caveman-zcode/tools/caveman-init.js | node - $ARGUMENTS
    ```
 
 The script is idempotent — safe to re-run. It appends the rule block to `AGENTS.md` (creating the file if absent) and skips if the caveman sentinel is already present.

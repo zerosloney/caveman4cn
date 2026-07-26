@@ -31,8 +31,8 @@
     "postinstall": "node ./scripts/install-zcode.js && node ./scripts/install-codebuddy.js"
   },
   "files": [
-    "plugins/caveman/",
-    "plugins/codebuddy/",
+    "plugins/caveman-zcode/",
+    "plugins/caveman-codebuddy/",
     "scripts/install-zcode.js",
     "scripts/install-codebuddy.js",
     "skills/",

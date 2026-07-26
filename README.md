@@ -15,8 +15,8 @@
 
 | 宿主 | 发现的清单 | 加载的插件 |
 |------|-----------|-----------|
-| ZCode | 仓库根 `marketplace.json` + `plugins/caveman/.zcode-plugin/plugin.json` | `caveman-zcode` |
-| CodeBuddy | `.codebuddy-plugin/marketplace.json` + `plugins/codebuddy/.codebuddy-plugin/plugin.json` | `caveman-codebuddy` |
+| ZCode | 仓库根 `marketplace.json` + `plugins/caveman-zcode/.zcode-plugin/plugin.json` | `caveman-zcode` |
+| CodeBuddy | `.codebuddy-plugin/marketplace.json` + `plugins/caveman-codebuddy/.codebuddy-plugin/plugin.json` | `caveman-codebuddy` |
 
 无需任何 schema 字段区分——靠的是两个宿主各自不同的清单目录约定。
 
@@ -114,7 +114,7 @@ npx @master0071/caveman4cn
 
 ## 工作原理
 
-1. 安装器将 `plugins/caveman/` 或 `plugins/codebuddy/` 复制到对应宿主的插件目录
+1. 安装器将 `plugins/caveman-zcode/` 或 `plugins/caveman-codebuddy/` 复制到对应宿主的插件目录
 2. 技能文件（`skills/*/SKILL.md`）告诉宿主：丢弃废话，保留实质
 3. 插件系统注册钩子、命令和技能，宿主自动加载
 4. 每个宿主只读取与自己约定相符的清单，因此只会加载对应插件

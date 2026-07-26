@@ -10,7 +10,7 @@
       "name": "caveman-codebuddy",
       "description": "Ultra-compressed communication mode for CodeBuddy. Cut filler. Keep technical accuracy. Supports lite, full, ultra, wenyan intensity levels.",
       "version": "0.1.0",
-      "source": "./plugins/codebuddy",
+      "source": "./plugins/caveman-codebuddy",
       "category": "productivity",
       "author": {
         "name": "master0071",

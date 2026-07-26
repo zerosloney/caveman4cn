@@ -7,7 +7,7 @@
 //   npx @master0071/caveman-zcode --dry-run     # 预览
 //   node scripts/install-zcode.js              # 本地安装
 //
-// 将 plugins/caveman/ 安装到 ZCode 插件系统：
+// 将 plugins/caveman-zcode/ 安装到 ZCode 插件系统：
 //   cache/  → 插件文件
 //   marketplaces/ → 注册
 //   data/   → 启用标记
@@ -15,7 +15,7 @@
 //   node scripts/install-zcode.js --uninstall   # 卸载
 //   node scripts/install-zcode.js --dry-run     # 预览
 //
-// 将 plugins/caveman/ 安装到 ZCode 插件系统：
+// 将 plugins/caveman-zcode/ 安装到 ZCode 插件系统：
 //   cache/  → 插件文件
 //   marketplaces/ → 注册
 //   data/   → 启用标记
@@ -47,10 +47,10 @@ const DATA_DIR = path.join(
   ZCODE_PLUGIN_DIR, 'data', `${PLUGIN_NAME}@${MARKETPLACE}`
 );
 
-// 源文件：repo 里的 plugins/caveman/ 目录
+// 源文件：repo 里的 plugins/caveman-zcode/ 目录
 // npm install 后：scripts/ 和 plugins/ 同级
 // npx 运行后：PATH 解析到 node_modules/@master0071/caveman-zcode/scripts/
-const SRC_DIR = path.join(__dirname, '..', 'plugins', 'caveman');
+const SRC_DIR = path.join(__dirname, '..', 'plugins', 'caveman-zcode');
 
 const SUBDIRS = ['.zcode-plugin', 'skills', 'commands', 'agents', 'hooks', 'assets'];
 

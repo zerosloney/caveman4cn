@@ -17,7 +17,7 @@ If you discover a security flaw — such as arbitrary shell execution via a hook
 Once a plugin is installed, it makes no network connections. Verifiable by auditing this repo:
 
 - **Skills** (`skills/*/SKILL.md`) are markdown prompts — no executable code, no network.
-- **Hooks** (`plugins/codebuddy/hooks/*.js`, `plugins/caveman/hooks/*.js`) are local Node scripts. They read and write local files only (session transcripts, the `~/.caveman-active` flag, `~/.caveman/lifetime-saved.json`) and contain no HTTP, fetch, or socket modules.
+- **Hooks** (`plugins/caveman-codebuddy/hooks/*.js`, `plugins/caveman-zcode/hooks/*.js`) are local Node scripts. They read and write local files only (session transcripts, the `~/.caveman-active` flag, `~/.caveman/lifetime-saved.json`) and contain no HTTP, fetch, or socket modules.
 - **`/caveman-stats`** parses local CodeBuddy/ZCode session JSONL files under `~/.codebuddy/projects/` (or `~/.zcode/cli/agents/`) to display token counts. It uses a hardcoded compression constant (2.86) and transmits nothing.
 - **`/caveman-compress`** does local file I/O only — it rewrites one explicitly named local file and creates a `.original.md` backup. No globbing, no shell-out.
 - **`/caveman-init`** writes the activation rule into the target repo's `AGENTS.md`. One local file write. No network.
@@ -42,5 +42,5 @@ After install, the plugin is self-contained and fully functional offline. No lic
 
 ## About scanner warnings
 
-- **Snyk "High Risk" on `caveman-compress`:** this skill reads, rewrites, and backs up a user-specified file. In-place file rewriting triggers generic risk scoring. It is a known, intended capability — no hidden network access, no shell execution, only explicitly named files. See `plugins/codebuddy/skills/caveman-compress/SECURITY.md` for the per-skill breakdown.
+- **Snyk "High Risk" on `caveman-compress`:** this skill reads, rewrites, and backs up a user-specified file. In-place file rewriting triggers generic risk scoring. It is a known, intended capability — no hidden network access, no shell execution, only explicitly named files. See `plugins/caveman-codebuddy/skills/caveman-compress/SECURITY.md` for the per-skill breakdown.
 - **Hook scripts flagged for subprocess/file-I/O patterns:** the hooks invoke `node` to parse stdin JSON and emit stdout JSON. They do not spawn arbitrary processes, do not read files outside the documented paths, and fail open (SessionStart/UserPromptSubmit) or fail closed (PreToolUse safety guard) on any error.

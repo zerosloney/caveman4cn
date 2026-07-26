@@ -20,12 +20,12 @@ This repo is a **dual-host marketplace** (`master0071`): one set of skills, ship
 
 Edit `skills/<name>/SKILL.md`, then mirror to **both** plugin distributions:
 
-1. `plugins/caveman/skills/<name>/SKILL.md` (ZCode)
-2. `plugins/codebuddy/skills/<name>/SKILL.md` (CodeBuddy)
+1. `plugins/caveman-zcode/skills/<name>/SKILL.md` (ZCode)
+2. `plugins/caveman-codebuddy/skills/<name>/SKILL.md` (CodeBuddy)
 
 ### Mirror rules
 
-- **5 of 7 skills are byte-identical across `skills/`, `plugins/caveman/skills/`, and `plugins/codebuddy/skills/`**: caveman, caveman-commit, caveman-compress, caveman-review, cavecrew. Edit once, copy to both.
+- **5 of 7 skills are byte-identical across `skills/`, `plugins/caveman-zcode/skills/`, and `plugins/caveman-codebuddy/skills/`**: caveman, caveman-commit, caveman-compress, caveman-review, cavecrew. Edit once, copy to both.
 - **`caveman-help`** diverges per host: the docs URL in the body points to the host-specific repo (`caveman-zcode` vs `caveman-codebuddy`). Mirror the body but keep the URL correct per host.
 - **`caveman-stats`** diverges per host: the body points at host-specific hook paths and transcript locations (`~/.zcode/cli/agents/` vs `~/.codebuddy/projects/`). Mirror the structure but keep the paths correct per host.
 
@@ -33,8 +33,8 @@ Edit `skills/<name>/SKILL.md`, then mirror to **both** plugin distributions:
 
 Hook scripts are **host-specific** (different env vars, event schemas, command-vs-process type). They are not shared — edit the copy under the relevant `plugins/<host>/hooks/`:
 
-- ZCode: `plugins/caveman/hooks/*.js` (uses `${ZCODE_PLUGIN_ROOT}`, `type: "process"`, `timeoutMs`)
-- CodeBuddy: `plugins/codebuddy/hooks/*.js` (uses `${CODEBUDDY_PLUGIN_ROOT}`, `type: "command"`, `timeout` in seconds)
+- ZCode: `plugins/caveman-zcode/hooks/*.js` (uses `${ZCODE_PLUGIN_ROOT}`, `type: "process"`, `timeoutMs`)
+- CodeBuddy: `plugins/caveman-codebuddy/hooks/*.js` (uses `${CODEBUDDY_PLUGIN_ROOT}`, `type: "command"`, `timeout` in seconds)
 
 When porting a hook from one host to the other, adapt the schema fields — do not copy verbatim.
 
@@ -52,12 +52,12 @@ Commands (`plugins/<host>/commands/*.md`) and agents (`plugins/<host>/agents/*.m
 
 ```bash
 # Syntax-check all hook scripts
-node -c plugins/codebuddy/hooks/*.js
-node -c plugins/caveman/hooks/*.js
+node -c plugins/caveman-codebuddy/hooks/*.js
+node -c plugins/caveman-zcode/hooks/*.js
 
 # Validate JSON configs
-node -e "['.codebuddy-plugin/marketplace.json','marketplace.json','plugins/codebuddy/.codebuddy-plugin/plugin.json','plugins/caveman/.zcode-plugin/plugin.json','plugins/codebuddy/hooks/hooks.json','plugins/caveman/hooks/hooks.json'].forEach(f=>JSON.parse(require('fs').readFileSync(f,'utf8'))); console.log('all JSON valid')"
+node -e "['.codebuddy-plugin/marketplace.json','marketplace.json','plugins/caveman-codebuddy/.codebuddy-plugin/plugin.json','plugins/caveman-zcode/.zcode-plugin/plugin.json','plugins/caveman-codebuddy/hooks/hooks.json','plugins/caveman-zcode/hooks/hooks.json'].forEach(f=>JSON.parse(require('fs').readFileSync(f,'utf8'))); console.log('all JSON valid')"
 
 # Simulate a hook
-echo '{"hook_event_name":"UserPromptSubmit","prompt":"/caveman-stats"}' | node plugins/codebuddy/hooks/caveman-mode-tracker.js
+echo '{"hook_event_name":"UserPromptSubmit","prompt":"/caveman-stats"}' | node plugins/caveman-codebuddy/hooks/caveman-mode-tracker.js
 ```
