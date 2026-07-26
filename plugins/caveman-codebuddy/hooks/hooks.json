@@ -3,7 +3,7 @@
   "hooks": {
     "SessionStart": [
       {
-        "matcher": "startup|clear|compact",
+        "matcher": "startup",
         "hooks": [
           {
             "type": "command",
@@ -20,20 +20,9 @@
         "hooks": [
           {
             "type": "command",
-            "command": "node \"${CODEBUDDY_PLUGIN_ROOT}/hooks/caveman-mode-tracker.js\"",
-            "description": "Intercept /caveman-stats and return real token numbers",
-            "timeout": 10,
-            "statusMessage": "Checking caveman-stats…"
-          }
-        ]
-      },
-      {
-        "hooks": [
-          {
-            "type": "command",
             "command": "node \"${CODEBUDDY_PLUGIN_ROOT}/hooks/user-prompt.js\"",
-            "description": "Track caveman mode switches and block empty prompts",
-            "timeout": 5,
+            "description": "Track caveman mode, handle /caveman commands, per-turn reinforcement",
+            "timeout": 10,
             "statusMessage": "Tracking caveman mode…"
           }
         ]
@@ -49,6 +38,20 @@
             "description": "Block dangerous operations (rm -rf, system file writes, etc.)",
             "timeout": 10,
             "statusMessage": "Verifying tool use…"
+          }
+        ]
+      }
+    ],
+    "PreCompact": [
+      {
+        "matcher": "auto|manual",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node \"${CODEBUDDY_PLUGIN_ROOT}/hooks/pre-compact.js\"",
+            "description": "Inject caveman rules into compression guidance",
+            "timeout": 5,
+            "statusMessage": "Preserving caveman mode during compression…"
           }
         ]
       }

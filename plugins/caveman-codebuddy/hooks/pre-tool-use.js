@@ -2,28 +2,22 @@
 // caveman — CodeBuddy PreToolUse hook
 // Guards against dangerous operations. Cross-platform (Windows + Unix).
 //
-// CodeBuddy contract (verified against official plugins):
+// CodeBuddy contract:
 //   - stdin: JSON { hook_event_name, tool_name, tool_input }
 //   - stdout: JSON { hookSpecificOutput: { hookEventName, permissionDecision, permissionDecisionReason } }
 //   - permissionDecision values: "allow" | "deny" | "ask"
 //
 // DESIGN: fail-closed. Any stdin parse failure or internal error -> deny.
-// (The previous shell+jq version failed OPEN: jq missing or regex error -> allow,
-//  silently permitting rm -rf /.)
 
 const path = require('path');
 const fs = require('fs');
+const { readFlag } = require('./caveman-config');
+
+const homeDir = process.env.HOME || process.env.USERPROFILE || '.';
+const flagPath = path.join(homeDir, '.caveman-active');
 
 function isCavemanActive() {
-  try {
-    const flagPath = path.join(
-      process.env.USERPROFILE || process.env.HOME || '.',
-      '.caveman-active'
-    );
-    return fs.existsSync(flagPath);
-  } catch {
-    return false;
-  }
+  return readFlag(flagPath) !== null;
 }
 
 // Dangerous patterns. JS regex (no jq, no shell escaping hell).
@@ -31,33 +25,52 @@ function isCavemanActive() {
 const DANGEROUS_PATTERNS = {
   Bash: [
     // Unix recursive force deletes
-    /rm\s+-rf?\s+\//, // rm -rf /
-    /rm\s+-rf?\s+~[/\s]/, // rm -rf ~
-    /rm\s+-rf?\s+\*/, // rm -rf *
+    /rm\s+-rf?\s+\//,           // rm -rf /
+    /rm\s+-rf?\s+~[/\s]/,       // rm -rf ~
+    /rm\s+-rf?\s+\*/,           // rm -rf *
     // Windows recursive deletes (case-insensitive matched via source flag below)
-    /rmdir\s+\/s/i, // rmdir /s
-    /del\s+\/[sf]/i, // del /s /f /q
+    /rmdir\s+\/s/i,             // rmdir /s
+    /del\s+\/[sf]/i,            // del /s /f /q
     /Remove-Item[^\n]*-Recurse[^\n]*-Force/i, // PowerShell recursive force
-    /rd\s+\/s/i, // rd /s (rmdir alias)
+    /rd\s+\/s/i,                // rd /s (rmdir alias)
     // Disk/partition destruction
     /mkfs\./i,
     /fdisk/i,
     /dd\s+if=\/dev\/zero/i,
-    /format\s+[a-z]:/i, // format C:
+    /format\s+[a-z]:/i,         // format C:
     />\/dev\/sd[a-z]/,
     // Privilege/permission escalation hazards
-    /chmod\s+777/,
-    /sudo\s+rm/i,
+    /chmod\s+-R\s+777/,
+    /chmod\s+777\s+\//,
+    /chown\s+-R\s+[^:]+:[^:]+?\s+\//,
+    /sudo\s+rm\s+-rf?\s+\//i,
+    /sudo\s+dd\s+if=/i,
+    /sudo\s+mkfs\./i,
     // Fork bomb
     /:\(\)\s*\{\s*:\|:\&\s*\}\s*;\s*:/,
     // Pipe-to-shell remote execution
     /curl[^\n]*\|\s*(sh|bash)/i,
     /wget[^\n]*\|\s*(sh|bash)/i,
-    /irm[^\n]*\|\s*iex/i, // PowerShell iex
+    /irm[^\n]*\|\s*iex/i,      // PowerShell iex
+    /Invoke-Expression[^\n]*\)/i,
+    // Crypto miner / known malware patterns
+    /xmrig/i,
+    /cryptominer/i,
+    /cpuminer/i,
+    // Data exfiltration
+    /curl[^\n]*--data(-binary)?\s+@\/etc\/passwd/i,
+    /nc\s+-e\s+\/bin\/sh/i,
+    /ncat\s+-e\s+\/bin\/sh/i,
+    // Mass file modification
+    /find\s+\/[^\n]*\s+-exec\s+chmod/i,
+    /find\s+\/[^\n]*\s+-delete/i,
   ],
   Write: [
     // Unix system files
     /\/etc\/(passwd|shadow|sudoers|group)/,
+    /\/etc\/ssh\//,
+    /\/boot\//,
+    /\/dev\//,
     // Windows system files / registry hives.
     // Match against the JSON-stringified tool_input, where backslashes are
     // doubled (C:\\Windows). Use [\\/]+ to match 1-or-2 backslashes or a slash.
@@ -66,12 +79,22 @@ const DANGEROUS_PATTERNS = {
     // SSH / credentials
     /~\/\.ssh\//,
     /\/var\/lib\//,
+    /~\/\.gnupg\//,
+    /~\/\.aws\/(credentials|config)/,
+    /~\/\.azure\//,
+    /~\/\.kube\//,
   ],
   Edit: [
     /\/etc\/(passwd|shadow|sudoers|group)/,
+    /\/etc\/ssh\//,
+    /\/boot\//,
     /[A-Z]:[\\/]+[Ww]indows[\\/]+[Ss]ystem32[\\/]+drivers[\\/]+etc[\\/]+hosts/,
     /[A-Z]:[\\/]+[Ww]indows[\\/]+[Ss]ystem32[\\/]+config[\\/]+(SAM|SECURITY|SYSTEM|SOFTWARE)/,
     /~\/\.ssh\//,
+    /~\/\.gnupg\//,
+    /~\/\.aws\/(credentials|config)/,
+    /~\/\.azure\//,
+    /~\/\.kube\//,
   ],
 };
 
@@ -101,6 +124,7 @@ function allow(reason) {
 
 function deny(reason) {
   return {
+    continue: false,
     hookSpecificOutput: {
       hookEventName: 'PreToolUse',
       permissionDecision: 'deny',
@@ -114,7 +138,7 @@ async function main() {
   process.stdin.setEncoding('utf-8');
   for await (const chunk of process.stdin) raw += chunk;
 
-  // FAIL-CLOSED: malformed stdin -> deny. Better to block than to silently allow.
+  // FAIL-CLOSED: malformed stdin -> deny.
   let input;
   try {
     input = JSON.parse(raw);

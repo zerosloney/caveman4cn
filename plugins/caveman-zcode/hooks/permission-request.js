@@ -1,11 +1,19 @@
 #!/usr/bin/env node
 // caveman — ZCode PermissionRequest hook
-// Auto-approves known safe write operations in caveman mode.
-// Reduces friction for the compressed communication workflow.
+// Reduces friction for the compressed-communication workflow by auto-allowing
+// writes to known-safe project paths, while hard-denying writes to sensitive
+// system/credential locations. Everything else falls through to the host's
+// default permission flow (the user is prompted as normal).
 //
 // ZCode hook stdout contract (diagnosing-hooks §2): strict JSON schema.
-// PermissionRequest uses exit codes like PreToolUse: exit 0 = allow,
-// exit 2 = deny, with the reason on stderr. Emit `{}` to stdout either way.
+// PermissionRequest follows the same rules as PreToolUse:
+//   - exit 0 + {}            -> no objection; host default flow runs (user is asked)
+//   - exit 0 + {permissionDecision:"allow", ...}  -> explicit allow
+//   - exit 2 / permissionDecision:"deny"           -> hard deny
+// This hook emits:
+//   - allow  for known-safe project paths ( SAFE_PATH_PREFIXES + SAFE_EXTENSIONS )
+//   - deny   for sensitive system/credential paths ( DENY_PATTERNS )
+//   - {}     otherwise (host default confirmation prompt runs)
 
 const path = require('path');
 
@@ -35,11 +43,54 @@ const SAFE_EXTENSIONS = new Set([
   '.mjs', '.cjs', '.mts', '.cts',
 ]);
 
+// Sensitive paths that this hook hard-denies regardless of caveman state.
+// Symmetric with pre-tool-use.js DANGEROUS_PATTERNS for Write/Edit: credential
+// files, SSH/GPG/AWS/Azure/kube dirs, system config, Windows registry hives.
+// Kept narrow and explicit — false denies here block legitimate work.
+const DENY_PATTERNS = [
+  /\/etc\/(passwd|shadow|sudoers|group)/,
+  /\/etc\/ssh\//,
+  /\/boot\//,
+  /\/dev\//,
+  /[A-Z]:[\\/]+[Ww]indows[\\/]+[Ss]ystem32[\\/]+drivers[\\/]+etc[\\/]+hosts/,
+  /[A-Z]:[\\/]+[Ww]indows[\\/]+[Ss]ystem32[\\/]+config[\\/]+(SAM|SECURITY|SYSTEM|SOFTWARE)/,
+  /~\/\.ssh\//,
+  /~\/\.gnupg\//,
+  /~\/\.aws\/(credentials|config)/,
+  /~\/\.azure\//,
+  /~\/\.kube\//,
+];
+
 function isSafePath(filePath) {
   if (!filePath) return false;
   const ext = path.extname(filePath).toLowerCase();
   if (!SAFE_EXTENSIONS.has(ext)) return false;
   return SAFE_PATH_PREFIXES.some((prefix) => filePath.startsWith(prefix));
+}
+
+function isSensitivePath(filePath) {
+  if (!filePath) return false;
+  return DENY_PATTERNS.some((re) => re.test(filePath));
+}
+
+function allow() {
+  return {
+    hookSpecificOutput: {
+      hookEventName: 'PermissionRequest',
+      permissionDecision: 'allow',
+      permissionDecisionReason: 'caveman: known-safe project path.',
+    },
+  };
+}
+
+function deny(reason) {
+  return {
+    hookSpecificOutput: {
+      hookEventName: 'PermissionRequest',
+      permissionDecision: 'deny',
+      permissionDecisionReason: reason,
+    },
+  };
 }
 
 async function main() {
@@ -59,16 +110,27 @@ async function main() {
   const toolInput = input.tool_input || {};
   const filePath = toolInput.file_path || toolInput.path || '';
 
-  // Auto-approve safe write operations
-  if ((toolName === 'Write' || toolName === 'Edit') && isSafePath(filePath)) {
-    process.stderr.write(`[caveman] PermissionRequest: auto-allow ${filePath}\n`);
+  // Only opine on write-family tools.
+  if (toolName !== 'Write' && toolName !== 'Edit') {
     process.stdout.write(JSON.stringify({}));
-    // exit 0 = allow
     return;
   }
 
-  // For unknown paths, let the default permission flow handle it (ask).
-  // Emit nothing and exit 0 so the host's normal confirmation prompt runs.
+  // Hard-deny sensitive system/credential paths.
+  if (isSensitivePath(filePath)) {
+    process.stderr.write(`[caveman] PermissionRequest: deny ${filePath} (sensitive path)\n`);
+    process.stdout.write(JSON.stringify(deny(`caveman: ${filePath} 是敏感系统/凭据路径，已拒绝写入。`)));
+    return;
+  }
+
+  // Auto-approve known-safe project paths.
+  if (isSafePath(filePath)) {
+    process.stderr.write(`[caveman] PermissionRequest: auto-allow ${filePath}\n`);
+    process.stdout.write(JSON.stringify(allow()));
+    return;
+  }
+
+  // Unknown paths — emit nothing; host's normal confirmation prompt runs.
   process.stdout.write(JSON.stringify({}));
 }
 

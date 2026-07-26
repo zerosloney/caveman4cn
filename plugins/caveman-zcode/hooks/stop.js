@@ -58,21 +58,41 @@ function isCavemanActive() {
   }
 }
 
+// Strip fenced and inline code so technical content isn't miscounted as filler.
+// Code, commands, and string literals often contain words like "just"/"simply"
+// that are legitimate there but would be false-positive filler in prose.
+function stripCode(text) {
+  return text
+    .replace(/```[\s\S]*?```/g, ' ')   // fenced code blocks
+    .replace(/`[^`\n]*`/g, ' ');        // inline code
+}
+
 // Check if the last assistant message violates caveman rules
 function checkVerbosity(message) {
   if (!message) return null;
-  const lines = message.split('\n');
 
-  // Count filler words as a heuristic
-  const fillerWords = ['sure', 'certainly', 'of course', 'happy to', 'i\'d suggest', 'i think', 'it seems', 'just', 'basically', 'actually', 'essentially', 'simply', 'i recommend'];
-  const fillerCount = fillerWords.reduce((sum, word) => {
-    const regex = new RegExp(`\\b${word}\\b`, 'gi');
-    const matches = message.match(regex);
+  // Measure filler only in prose — code is exempt (see stripCode).
+  const prose = stripCode(message);
+  const lines = prose.split('\n');
+
+  // Pure pleasantries only — these are always caveman-killable fluff.
+  // Weak hedges (just/simply/actually/basically/essentially/i think/it seems)
+  // are deliberately NOT counted: they appear in legitimate technical prose
+  // ("just works", "simply connected", "actually async", "I think the cause is X")
+  // and caused false-positive blocks. The SKILL.md still guides the model to
+  // avoid them at generation time; we just don't block on them post-hoc.
+  //
+  // Matched as stems so conjugations/contractions are caught
+  // (sure/surely, certain/certainly, recommend/recommended, etc.).
+  const fillerStems = ['sure', 'certain', 'of course', 'happy to (help|assist)', 'i\'?d (suggest|recommend)', 'i (suggest|recommend)', 'my pleasure', 'glad to'];
+  const fillerCount = fillerStems.reduce((sum, stem) => {
+    const regex = new RegExp(`\\b${stem}\\w*\\b`, 'gi');
+    const matches = prose.match(regex);
     return sum + (matches ? matches.length : 0);
   }, 0);
 
-  const wordCount = message.split(/\s+/).length;
-  const totalLines = lines.length;
+  const wordCount = prose.split(/\s+/).filter(Boolean).length;
+  const totalLines = lines.filter(Boolean).length;
 
   // If caveman mode is active, flag verbose output
   if (fillerCount > 3 && wordCount > 100) {

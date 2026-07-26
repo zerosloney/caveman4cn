@@ -21,20 +21,9 @@
           {
             "type": "process",
             "command": "node",
-            "args": ["${ZCODE_PLUGIN_ROOT}/hooks/caveman-mode-tracker.js"],
-            "timeoutMs": 10000,
-            "statusMessage": "Checking caveman-stats…"
-          }
-        ]
-      },
-      {
-        "hooks": [
-          {
-            "type": "process",
-            "command": "node",
             "args": ["${ZCODE_PLUGIN_ROOT}/hooks/user-prompt.js"],
-            "timeoutMs": 5000,
-            "statusMessage": "Checking prompt…"
+            "timeoutMs": 10000,
+            "statusMessage": "Tracking caveman mode…"
           }
         ]
       }
