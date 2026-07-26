@@ -29,7 +29,7 @@ caveman4cn/
 ├── plugins/
 │   ├── caveman/                         # ZCode 插件（Node hooks）
 │   │   └── .zcode-plugin/plugin.json
-│   └── codebuddy/                       # CodeBuddy 插件（jq/bash hooks）
+│   └── codebuddy/                       # CodeBuddy 插件（Node hooks）
 │       └── .codebuddy-plugin/plugin.json
 ├── skills/                              # 共享技能源（真理之源）
 ├── scripts/
@@ -86,6 +86,7 @@ npx @master0071/caveman4cn
 - `/caveman-commit` — 传统提交信息，≤50 字主题
 - `/caveman-review` — 一行式 PR 评论
 - `/caveman-compress <file>` — 压缩记忆文件，永久节省输入 token
+- `/caveman-init` — 写入 per-repo AGENTS.md 规则，CodeBuddy 每次会话自动加载 caveman
 - `/caveman-stats` — 查看 token 节省统计
 - `/caveman-help` — 快速参考卡
 - `stop caveman` / `normal mode` — 关闭原始人模式
