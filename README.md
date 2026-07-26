@@ -1,24 +1,26 @@
 # Caveman Marketplace (master0071) 🪨
 
-**一个仓库，两个宿主插件。** 词多何用，少即是好。
+**一个仓库，三个宿主插件。** 词多何用，少即是好。
 
 让代理像原始人一样说话。同样的答案，**输出 token 减少 65%**。脑子照旧，嘴巴变小。
 
 ## 这是什么
 
-本仓库是名为 **`master0071`** 的统一插件市场，同时为两个宿主提供 Caveman 插件：
+本仓库是名为 **`master0071`** 的统一插件市场，同时为三个宿主提供 Caveman 插件：
 
 - **ZCode** 加载本仓库 → 获得 `caveman-zcode`
 - **CodeBuddy** 加载本仓库 → 获得 `caveman-codebuddy`
+- **Trae IDE** 运行 `install-trae.js` → 获得 `caveman-trae`
 
-两个宿主读取各自的清单文件，互不干扰：
+三个宿主各按自己的约定发现资产，互不干扰：
 
-| 宿主 | 发现的清单 | 加载的插件 |
-|------|-----------|-----------|
+| 宿主 | 发现机制 | 加载的插件 |
+|------|---------|-----------|
 | ZCode | 仓库根 `marketplace.json` + `plugins/caveman-zcode/.zcode-plugin/plugin.json` | `caveman-zcode` |
 | CodeBuddy | `.codebuddy-plugin/marketplace.json` + `plugins/caveman-codebuddy/.codebuddy-plugin/plugin.json` | `caveman-codebuddy` |
+| Trae IDE | 安装器铺资产到 `~/.trae-cn/`（无市场清单概念） | `caveman-trae` |
 
-无需任何 schema 字段区分——靠的是两个宿主各自不同的清单目录约定。
+ZCode 与 CodeBuddy 靠各自清单目录约定区分；Trae 没有 marketplace/plugin.json 概念，由安装器把 skills/commands/hooks/rules 铺到 `~/.trae-cn/` 全局约定位置。
 
 ## 目录结构
 
@@ -27,14 +29,17 @@ caveman4cn/
 ├── marketplace.json                     # ZCode 根清单 → caveman-zcode
 ├── .codebuddy-plugin/marketplace.json   # CodeBuddy 清单 → caveman-codebuddy
 ├── plugins/
-│   ├── caveman/                         # ZCode 插件（Node hooks）
+│   ├── caveman-zcode/                   # ZCode 插件（Node hooks）
 │   │   └── .zcode-plugin/plugin.json
-│   └── codebuddy/                       # CodeBuddy 插件（Node hooks）
-│       └── .codebuddy-plugin/plugin.json
+│   ├── caveman-codebuddy/               # CodeBuddy 插件（Node hooks）
+│   │   └── .codebuddy-plugin/plugin.json
+│   └── caveman-trae/                    # Trae 插件（文档清单 + 安装器铺放资产）
+│       └── .trae-plugin/plugin.json     # 仅作文档；Trae 不扫描
 ├── skills/                              # 共享技能源（真理之源）
 ├── scripts/
 │   ├── install-zcode.js                 # 安装到 ZCode
-│   └── install-codebuddy.js             # 安装到 CodeBuddy
+│   ├── install-codebuddy.js             # 安装到 CodeBuddy
+│   └── install-trae.js                  # 安装到 Trae（铺到 ~/.trae-cn/）
 └── package.json                         # @master0071/caveman4cn
 ```
 
@@ -68,6 +73,23 @@ node scripts/install-codebuddy.js --uninstall # 卸载
 ```
 
 安装后执行 `/reload-plugins`。
+
+### Trae IDE
+
+```bash
+node scripts/install-trae.js             # 安装
+node scripts/install-trae.js --dry-run   # 预览
+node scripts/install-trae.js --uninstall # 卸载
+```
+
+Trae 没有 marketplace 概念——安装器把资产直接铺到 `~/.trae-cn/`：
+- skills → `~/.trae-cn/skills/<name>/`
+- commands → `~/.trae-cn/commands/`
+- rules → `~/.trae-cn/rules/caveman-activate.md`（静态激活兜底）
+- hooks + helpers + tools + agents → `~/.trae-cn/caveman-trae/`
+- `~/.trae-cn/hooks.json` 合并 5 个事件（SessionStart/UserPromptSubmit/PreToolUse/PostToolUse/Stop）
+
+安装后重启 Trae IDE。
 
 ### 一键全部安装（通过 npm）
 
@@ -114,10 +136,10 @@ npx @master0071/caveman4cn
 
 ## 工作原理
 
-1. 安装器将 `plugins/caveman-zcode/` 或 `plugins/caveman-codebuddy/` 复制到对应宿主的插件目录
+1. 安装器将 `plugins/caveman-zcode/` 或 `plugins/caveman-codebuddy/` 复制到对应宿主的插件目录；Trae 则由安装器把 `plugins/caveman-trae/` 的资产铺到 `~/.trae-cn/` 各约定位置
 2. 技能文件（`skills/*/SKILL.md`）告诉宿主：丢弃废话，保留实质
-3. 插件系统注册钩子、命令和技能，宿主自动加载
-4. 每个宿主只读取与自己约定相符的清单，因此只会加载对应插件
+3. ZCode/CodeBuddy 的插件系统注册钩子、命令和技能；Trae 的 skills/commands/rules 落到 `~/.trae-cn/` 全局目录自动加载，hooks 通过合并 `~/.trae-cn/hooks.json` 注册
+4. ZCode/CodeBuddy 只读取与自己约定相符的清单，因此只会加载对应插件；Trae 不读市场清单，资产靠约定路径发现
 
 ## 许可证
 

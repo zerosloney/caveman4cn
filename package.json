@@ -1,7 +1,7 @@
 {
   "name": "@master0071/caveman4cn",
   "version": "0.1.0",
-  "description": "Unified Caveman plugin marketplace (master0071). One repo, two host plugins: caveman-zcode (for ZCode) + caveman-codebuddy (for CodeBuddy). Ultra-compressed communication mode — cut filler, keep technical accuracy.",
+  "description": "Unified Caveman plugin marketplace (master0071). One repo, three host plugins: caveman-zcode (ZCode) + caveman-codebuddy (CodeBuddy) + caveman-trae (Trae IDE). Ultra-compressed communication mode — cut filler, keep technical accuracy.",
   "license": "MIT",
   "author": {
     "name": "master0071",
@@ -23,18 +23,22 @@
   },
   "bin": {
     "caveman-zcode": "./scripts/install-zcode.js",
-    "caveman-codebuddy": "./scripts/install-codebuddy.js"
+    "caveman-codebuddy": "./scripts/install-codebuddy.js",
+    "caveman-trae": "./scripts/install-trae.js"
   },
   "scripts": {
     "install:zcode": "node ./scripts/install-zcode.js",
     "install:codebuddy": "node ./scripts/install-codebuddy.js",
-    "postinstall": "node ./scripts/install-zcode.js && node ./scripts/install-codebuddy.js"
+    "install:trae": "node ./scripts/install-trae.js",
+    "postinstall": "node ./scripts/install-zcode.js && node ./scripts/install-codebuddy.js && node ./scripts/install-trae.js"
   },
   "files": [
     "plugins/caveman-zcode/",
     "plugins/caveman-codebuddy/",
+    "plugins/caveman-trae/",
     "scripts/install-zcode.js",
     "scripts/install-codebuddy.js",
+    "scripts/install-trae.js",
     "skills/",
     "marketplace.json",
     ".codebuddy-plugin/marketplace.json",

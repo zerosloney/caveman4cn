@@ -1,0 +1,27 @@
+{
+  "_comment": "Documentational manifest only. Trae IDE does NOT scan for plugin.json or marketplace.json — its AI assets (skills/commands/hooks/rules) are loose files under ~/.trae-cn/ (global) and .trae/ (project). This file exists for repo consistency with caveman-zcode/.zcode-plugin and caveman-codebuddy/.codebuddy-plugin, and to declare intent. The actual install is performed by scripts/install-trae.js, which lays assets into ~/.trae-cn/skills/, ~/.trae-cn/commands/, ~/.trae-cn/caveman-trae/{hooks,tools,agents}/, and merges ~/.trae-cn/hooks.json.",
+  "name": "caveman-trae",
+  "version": "0.1.0",
+  "description": "Ultra-compressed communication mode for Trae IDE. Cut filler. Keep technical accuracy. Supports intensity levels: lite, full, ultra, wenyan-lite, wenyan-full, wenyan-ultra.",
+  "author": {
+    "name": "master0071",
+    "url": "https://github.com/master0071"
+  },
+  "homepage": "https://github.com/zerosloney/caveman4cn",
+  "repository": "https://github.com/zerosloney/caveman4cn",
+  "license": "MIT",
+  "keywords": ["productivity", "communication", "brevity", "trae"],
+  "category": "Productivity",
+  "commands": "commands",
+  "agents": "agents",
+  "skills": [
+    "skills/caveman",
+    "skills/caveman-commit",
+    "skills/caveman-compress",
+    "skills/caveman-help",
+    "skills/caveman-review",
+    "skills/caveman-stats",
+    "skills/cavecrew"
+  ],
+  "hooks": "hooks/hooks.json"
+}

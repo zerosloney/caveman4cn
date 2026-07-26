@@ -1,0 +1,65 @@
+{
+  "_comment": "Trae IDE hooks.json template. Trae schema: { version:1, hooks:{ <Event>:[{ matcher?, loop_limit?, hooks:[{ type:'command', command, timeout }] }] } }. timeout is in SECONDS (not ms). Trae does NOT interpolate ${VAR} in command strings — the installer (scripts/install-trae.js) rewrites ${TRAE_PLUGIN_ROOT} to an absolute path before laying this file into ~/.trae-cn/hooks.json. Trae supports 6 events: SessionStart, UserPromptSubmit, PreToolUse, PostToolUse, Stop, Notification. caveman-trae wires 5 (Notification omitted — async, unrelated to compression). Trae tool names differ from Claude (e.g. Terminal/RunCommand vs Bash, File System vs Write); matchers below cover both naming families.",
+  "version": 1,
+  "hooks": {
+    "SessionStart": [
+      {
+        "matcher": "startup|clear|compact",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node \"${TRAE_PLUGIN_ROOT}/hooks/session-start.js\"",
+            "timeout": 10
+          }
+        ]
+      }
+    ],
+    "UserPromptSubmit": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node \"${TRAE_PLUGIN_ROOT}/hooks/user-prompt.js\"",
+            "timeout": 10
+          }
+        ]
+      }
+    ],
+    "PreToolUse": [
+      {
+        "matcher": "Terminal|RunCommand|Bash|Write|Edit|File System",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node \"${TRAE_PLUGIN_ROOT}/hooks/pre-tool-use.js\"",
+            "timeout": 10
+          }
+        ]
+      }
+    ],
+    "PostToolUse": [
+      {
+        "matcher": "Terminal|RunCommand|Bash|Write|Edit|File System",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node \"${TRAE_PLUGIN_ROOT}/hooks/post-tool-use.js\"",
+            "timeout": 10
+          }
+        ]
+      }
+    ],
+    "Stop": [
+      {
+        "loop_limit": 3,
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node \"${TRAE_PLUGIN_ROOT}/hooks/stop.js\"",
+            "timeout": 10
+          }
+        ]
+      }
+    ]
+  }
+}
