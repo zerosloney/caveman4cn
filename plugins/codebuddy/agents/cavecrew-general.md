@@ -1,7 +1,7 @@
 ---
 name: cavecrew-general
 description: General-purpose caveman subagent. Complete tasks with caveman compression: implement features, fix bugs, run commands, write tests. Output is ultra-terse.
-tools: Read, Grep, Glob, Bash, Edit, Write, Eval, Task
+tools: Read, Grep, Glob, Bash, Edit, Write
 model: default
 ---
 

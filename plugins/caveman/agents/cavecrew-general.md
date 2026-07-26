@@ -4,7 +4,7 @@ description: >
   General-purpose caveman subagent. Complete tasks with caveman compression:
   implement features, fix bugs, run commands, write tests. Output is ultra-terse.
   Use when the main Agent needs to parallelize any work item.
-tools: [Read, Grep, Glob, Bash, Edit, Write, Eval, Task]
+tools: [Read, Grep, Glob, Bash, Edit, Write]
 model: default
 ---
 

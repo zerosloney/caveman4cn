@@ -7,17 +7,20 @@ description: >
   the model itself does not compute the numbers.
 ---
 
-> **Status:** Not yet wired up for CodeBuddy. The ZCode build ships a
-> `UserPromptSubmit` mode-tracker hook (`hooks/caveman-mode-tracker.js` +
-> `hooks/caveman-stats.js`) that reads `model_complete` usage records from the
-> session transcript and prints formatted stats. That tracker has not been
-> ported to the CodeBuddy hook contract yet. When invoked, reply:
-> "Caveman stats not available in this build."
+This skill is delivered by the `UserPromptSubmit` hook
+`hooks/caveman-mode-tracker.js`, which uses `hooks/caveman-stats.js` to read
+CodeBuddy session transcripts from
+`~/.codebuddy/projects/<project>/<uuid>.jsonl`.
 
-When implemented, the contract will be: the hook reads CodeBuddy session
-transcripts, computes input/output/cache token usage plus an estimated
-baseline (output × 2.86, the caveman compression factor), and returns the
-formatted numbers via `continue: false` + `reason` so the host prints them and
-the model never runs. Planned flags:
-- `--lifetime` / `--all` — union every session, not just the newest.
+When the prompt is `/caveman-stats` (optionally `--lifetime`, `--all`, or `--share`),
+the hook returns `continue: false` with the formatted stats as the `reason`, so
+the host prints the numbers and the model never runs. Flags:
+- `--lifetime` / `--all` — union every project's transcripts, not just the newest.
 - `--share` — one-line summary (`⛏ Session: N tokens saved (~X%) via caveman mode`).
+
+Input/output/cache figures come straight from the transcript `usage` records;
+only the `Baseline` line is estimated (output × 2.86, the caveman compression
+factor). CodeBuddy's transcript record schema is not publicly documented, so
+usage extraction is defensive — it matches the common `payload.usage` shape and
+falls back to any record carrying a top-level `usage` object. If no usage
+records are found, the hook reports "No session log found yet."

@@ -3,12 +3,38 @@
   "hooks": {
     "SessionStart": [
       {
+        "matcher": "startup|clear|compact",
         "hooks": [
           {
             "type": "command",
             "command": "node \"${CODEBUDDY_PLUGIN_ROOT}/hooks/session-start.js\"",
             "description": "Activate caveman mode and inject compressed-communication rules",
-            "timeout": 10
+            "timeout": 10,
+            "statusMessage": "Activating caveman mode…"
+          }
+        ]
+      }
+    ],
+    "UserPromptSubmit": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node \"${CODEBUDDY_PLUGIN_ROOT}/hooks/caveman-mode-tracker.js\"",
+            "description": "Intercept /caveman-stats and return real token numbers",
+            "timeout": 10,
+            "statusMessage": "Checking caveman-stats…"
+          }
+        ]
+      },
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node \"${CODEBUDDY_PLUGIN_ROOT}/hooks/user-prompt.js\"",
+            "description": "Track caveman mode switches and block empty prompts",
+            "timeout": 5,
+            "statusMessage": "Tracking caveman mode…"
           }
         ]
       }
@@ -21,7 +47,8 @@
             "type": "command",
             "command": "node \"${CODEBUDDY_PLUGIN_ROOT}/hooks/pre-tool-use.js\"",
             "description": "Block dangerous operations (rm -rf, system file writes, etc.)",
-            "timeout": 10
+            "timeout": 10,
+            "statusMessage": "Verifying tool use…"
           }
         ]
       }
