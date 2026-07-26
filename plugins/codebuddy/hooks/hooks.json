@@ -1,52 +1,27 @@
 {
+  "description": "Caveman CodeBuddy hooks",
   "hooks": {
     "SessionStart": [
       {
         "hooks": [
           {
             "type": "command",
-            "command": "echo '{\"hookSpecificOutput\":{\"hookEventName\":\"SessionStart\",\"additionalContext\":\"Caveman mode active. Respond terse like smart caveman — drop articles, filler, pleasantries. Fragments OK. Technical terms exact. Code unchanged.\"}}'"
+            "command": "node \"${CODEBUDDY_PLUGIN_ROOT}/hooks/session-start.js\"",
+            "description": "Activate caveman mode and inject compressed-communication rules",
+            "timeout": 10
           }
         ]
       }
     ],
     "PreToolUse": [
       {
-        "matcher": "Bash",
+        "matcher": "Bash|Write|Edit",
         "hooks": [
           {
             "type": "command",
-            "command": "jq -e '.tool_input.command | test(\"rm\\\\s+-rf\\\\s+/\")' > /dev/null 2>&1 && echo '{\"hookSpecificOutput\":{\"hookEventName\":\"PreToolUse\",\"permissionDecision\":\"deny\",\"permissionDecisionReason\":\"Caveman: dangerous rm -rf blocked\"}}' || echo '{\"hookSpecificOutput\":{\"hookEventName\":\"PreToolUse\",\"permissionDecision\":\"allow\"}}'"
-          }
-        ]
-      },
-      {
-        "matcher": "Write|Edit",
-        "hooks": [
-          {
-            "type": "command",
-            "command": "jq -e '.tool_input.file_path | test(\"/etc/(passwd|shadow|sudoers)\")' > /dev/null 2>&1 && echo '{\"hookSpecificOutput\":{\"hookEventName\":\"PreToolUse\",\"permissionDecision\":\"deny\",\"permissionDecisionReason\":\"Caveman: system file write blocked\"}}' || echo '{\"hookSpecificOutput\":{\"hookEventName\":\"PreToolUse\",\"permissionDecision\":\"allow\"}}'"
-          }
-        ]
-      }
-    ],
-    "PostToolUse": [
-      {
-        "matcher": "Write|Edit",
-        "hooks": [
-          {
-            "type": "command",
-            "command": "echo '{\"hookSpecificOutput\":{\"hookEventName\":\"PostToolUse\",\"additionalContext\":\"\"}}'"
-          }
-        ]
-      }
-    ],
-    "Stop": [
-      {
-        "hooks": [
-          {
-            "type": "command",
-            "command": "echo '{}'"
+            "command": "node \"${CODEBUDDY_PLUGIN_ROOT}/hooks/pre-tool-use.js\"",
+            "description": "Block dangerous operations (rm -rf, system file writes, etc.)",
+            "timeout": 10
           }
         ]
       }

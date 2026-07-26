@@ -2,12 +2,12 @@
 // install-codebuddy.js — Install caveman plugin for CodeBuddy
 //
 // 用法：
-//   npx @master0071/codebuddy-caveman              # 安装
-//   npx @master0071/codebuddy-caveman --uninstall   # 卸载
-//   npx @master0071/codebuddy-caveman --dry-run     # 预览
+//   npx @master0071/caveman-codebuddy              # 安装
+//   npx @master0071/caveman-codebuddy --uninstall   # 卸载
+//   npx @master0071/caveman-codebuddy --dry-run     # 预览
 //   node scripts/install-codebuddy.js               # 本地安装
 //
-// 将插件复制到 ~/.codebuddy/plugins/codebuddy-caveman/
+// 将插件复制到 ~/.codebuddy/plugins/caveman-codebuddy/
 // 并通过 CodeBuddy 市场系统注册，不依赖项目源目录。
 
 'use strict';
@@ -158,14 +158,14 @@ function install(dryRun) {
     console.error(`\nError: plugin source not found at ${SRC_DIR}`);
     if (isNpmInstall()) {
       console.error('npm package may be corrupted. Try reinstalling:');
-      console.error('  npm install -g @master0071/codebuddy-caveman');
+      console.error('  npm install -g @master0071/caveman-codebuddy');
     } else {
       console.error('Run this script from the repository root');
     }
     process.exit(1);
   }
 
-  // 3. 复制插件文件到 ~/.codebuddy/plugins/codebuddy-caveman/
+  // 3. 复制插件文件到 ~/.codebuddy/plugins/caveman-codebuddy/
   console.log(`\n→ Copying plugin to ${INSTALL_DIR}`);
   if (!dryRun) {
     if (fs.existsSync(INSTALL_DIR)) {
