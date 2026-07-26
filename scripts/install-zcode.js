@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-// install-zcode.js — Install caveman plugin for zCode
+// install-zcode.js — Install caveman plugin for ZCode
 //
 // 用法：
 //   npx @master0071/caveman-zcode              # 安装
@@ -7,7 +7,7 @@
 //   npx @master0071/caveman-zcode --dry-run     # 预览
 //   node scripts/install-zcode.js              # 本地安装
 //
-// 将 plugins/caveman/ 安装到 zCode 插件系统：
+// 将 plugins/caveman/ 安装到 ZCode 插件系统：
 //   cache/  → 插件文件
 //   marketplaces/ → 注册
 //   data/   → 启用标记
@@ -15,7 +15,7 @@
 //   node scripts/install-zcode.js --uninstall   # 卸载
 //   node scripts/install-zcode.js --dry-run     # 预览
 //
-// 将 plugins/caveman/ 安装到 zCode 插件系统：
+// 将 plugins/caveman/ 安装到 ZCode 插件系统：
 //   cache/  → 插件文件
 //   marketplaces/ → 注册
 //   data/   → 启用标记
@@ -90,7 +90,7 @@ function deleteDirRecursive(dir) {
 // ── 安装 ────────────────────────────────────────────────────────────────
 
 function install(dryRun) {
-  console.log('🪨  Installing caveman for zCode...\n');
+  console.log('🪨  Installing caveman for ZCode...\n');
 
   // 1. 检查源文件
   if (!fs.existsSync(SRC_DIR)) {
@@ -127,7 +127,7 @@ function install(dryRun) {
   if (!dryRun) {
     let marketplace = {
       name: MARKETPLACE,
-      description: 'Caveman plugin for zCode — ultra-compressed communication mode',
+      description: 'Caveman plugin for ZCode — ultra-compressed communication mode',
       owner: { name: 'zerosloney', url: 'https://github.com/zerosloney/caveman-zcode' },
       plugins: [],
       version: 1,
@@ -139,7 +139,7 @@ function install(dryRun) {
     // 检查是否已注册
     const entry = {
       cachePath: PLUGIN_ROOT.replace(/\\/g, '\\\\'),
-      description: 'Ultra-compressed communication mode for zCode. Cut filler. Keep technical accuracy.',
+      description: 'Ultra-compressed communication mode for ZCode. Cut filler. Keep technical accuracy.',
       name: PLUGIN_NAME,
       source: 'filesystem',
       version: PLUGIN_VERSION,
@@ -172,14 +172,14 @@ function install(dryRun) {
     console.log('  would create data dir');
   }
 
-  console.log('\n✅ 安装完成。重启 zCode 后生效。');
+  console.log('\n✅ 安装完成。重启 ZCode 后生效。');
   console.log('   在会话中输入 /caveman 开启原始人模式');
 }
 
 // ── 卸载 ────────────────────────────────────────────────────────────────
 
 function uninstall(dryRun) {
-  console.log('🪨  Uninstalling caveman from zCode...\n');
+  console.log('🪨  Uninstalling caveman from ZCode...\n');
 
   // 1. 删除插件文件
   if (fs.existsSync(PLUGIN_ROOT)) {
@@ -212,7 +212,7 @@ function uninstall(dryRun) {
     }
   }
 
-  console.log('\n✅ 卸载完成。重启 zCode 后生效。');
+  console.log('\n✅ 卸载完成。重启 ZCode 后生效。');
 }
 
 // ── 入口 ────────────────────────────────────────────────────────────────

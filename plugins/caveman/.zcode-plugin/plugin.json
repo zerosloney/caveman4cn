@@ -1,7 +1,7 @@
 {
   "name": "caveman-zcode",
   "version": "0.1.0",
-  "description": "Ultra-compressed communication mode for zCode. Cut filler. Keep technical accuracy. Supports intensity levels: lite, full, ultra, wenyan.",
+  "description": "Ultra-compressed communication mode for ZCode. Cut filler. Keep technical accuracy. Supports intensity levels: lite, full, ultra, wenyan.",
   "author": {
     "name": "zerosloney",
     "url": "https://github.com/zerosloney/caveman-zcode"

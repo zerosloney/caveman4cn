@@ -8,14 +8,14 @@
 
 本仓库是名为 **`master0071`** 的统一插件市场，同时为两个宿主提供 Caveman 插件：
 
-- **zCode** 加载本仓库 → 获得 `caveman-zcode`
+- **ZCode** 加载本仓库 → 获得 `caveman-zcode`
 - **CodeBuddy** 加载本仓库 → 获得 `caveman-codebuddy`
 
 两个宿主读取各自的清单文件，互不干扰：
 
 | 宿主 | 发现的清单 | 加载的插件 |
 |------|-----------|-----------|
-| zCode | 仓库根 `marketplace.json` + `plugins/caveman/.zcode-plugin/plugin.json` | `caveman-zcode` |
+| ZCode | 仓库根 `marketplace.json` + `plugins/caveman/.zcode-plugin/plugin.json` | `caveman-zcode` |
 | CodeBuddy | `.codebuddy-plugin/marketplace.json` + `plugins/codebuddy/.codebuddy-plugin/plugin.json` | `caveman-codebuddy` |
 
 无需任何 schema 字段区分——靠的是两个宿主各自不同的清单目录约定。
@@ -24,16 +24,16 @@
 
 ```
 caveman4cn/
-├── marketplace.json                     # zCode 根清单 → caveman-zcode
+├── marketplace.json                     # ZCode 根清单 → caveman-zcode
 ├── .codebuddy-plugin/marketplace.json   # CodeBuddy 清单 → caveman-codebuddy
 ├── plugins/
-│   ├── caveman/                         # zCode 插件（Node hooks）
+│   ├── caveman/                         # ZCode 插件（Node hooks）
 │   │   └── .zcode-plugin/plugin.json
 │   └── codebuddy/                       # CodeBuddy 插件（jq/bash hooks）
 │       └── .codebuddy-plugin/plugin.json
 ├── skills/                              # 共享技能源（真理之源）
 ├── scripts/
-│   ├── install-zcode.js                 # 安装到 zCode
+│   ├── install-zcode.js                 # 安装到 ZCode
 │   └── install-codebuddy.js             # 安装到 CodeBuddy
 └── package.json                         # @master0071/caveman4cn
 ```
@@ -49,7 +49,7 @@ caveman4cn/
 
 ## 安装
 
-### zCode
+### ZCode
 
 ```bash
 node scripts/install-zcode.js             # 安装
@@ -57,7 +57,7 @@ node scripts/install-zcode.js --dry-run   # 预览
 node scripts/install-zcode.js --uninstall # 卸载
 ```
 
-安装后重启 zCode。
+安装后重启 ZCode。
 
 ### CodeBuddy
 

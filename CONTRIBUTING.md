@@ -2,7 +2,7 @@
 
 ## Quick orientation
 
-This repo distributes caveman skills to zCode as a plugin. All skills live in `skills/` and are mirrored to `plugins/caveman/skills/` for zCode distribution.
+This repo distributes caveman skills to ZCode as a plugin. All skills live in `skills/` and are mirrored to `plugins/caveman/skills/` for ZCode distribution.
 
 ## What to edit
 
@@ -15,7 +15,7 @@ This repo distributes caveman skills to zCode as a plugin. All skills live in `s
 | Quick reference card | `skills/caveman-help/SKILL.md` |
 | Token stats | `skills/caveman-stats/SKILL.md` |
 | Cavecrew decision guide | `skills/cavecrew/SKILL.md` |
-| zCode installer | `scripts/install-zcode.js` |
+| ZCode installer | `scripts/install-zcode.js` |
 
 ## Build
 

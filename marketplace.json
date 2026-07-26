@@ -9,7 +9,7 @@
     {
       "name": "caveman-zcode",
       "source": "./plugins/caveman",
-      "description": "Ultra-compressed communication mode for zCode. Cut filler. Keep technical accuracy. Supports lite, full, ultra, wenyan intensity levels.",
+      "description": "Ultra-compressed communication mode for ZCode. Cut filler. Keep technical accuracy. Supports lite, full, ultra, wenyan intensity levels.",
       "version": "0.1.0",
       "category": "productivity",
       "tags": ["productivity", "communication", "brevity", "caveman", "zcode"],

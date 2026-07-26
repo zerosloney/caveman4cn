@@ -1,7 +1,7 @@
 {
   "name": "@master0071/caveman4cn",
   "version": "0.1.0",
-  "description": "Unified Caveman plugin marketplace (master0071). One repo, two host plugins: caveman-zcode (for zCode) + caveman-codebuddy (for CodeBuddy). Ultra-compressed communication mode — cut filler, keep technical accuracy.",
+  "description": "Unified Caveman plugin marketplace (master0071). One repo, two host plugins: caveman-zcode (for ZCode) + caveman-codebuddy (for CodeBuddy). Ultra-compressed communication mode — cut filler, keep technical accuracy.",
   "license": "MIT",
   "author": {
     "name": "master0071",
