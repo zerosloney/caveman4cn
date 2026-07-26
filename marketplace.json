@@ -1,19 +1,38 @@
 {
   "name": "master0071",
-  "description": "Caveman plugin marketplace (zcode + codebuddy) — ultra-compressed communication mode. Add this repo in zcode to get caveman-zcode, or in codebuddy to get caveman-codebuddy.",
+  "description": "Caveman plugin marketplace (zcode + codebuddy) — ultra-compressed communication mode. Add this repo in codebuddy to get caveman-codebuddy, or in zcode to get caveman-zcode.",
   "owner": {
     "name": "master0071",
-    "url": "https://github.com/zerosloney/caveman4cn"
+    "email": "master0071@users.noreply.github.com"
   },
   "plugins": [
     {
+      "name": "caveman-codebuddy",
+      "description": "Ultra-compressed communication mode for CodeBuddy. Cut filler. Keep technical accuracy. Supports lite, full, ultra, wenyan intensity levels.",
+      "version": "0.1.0",
+      "source": "./plugins/caveman-codebuddy",
+      "category": "productivity",
+      "author": {
+        "name": "master0071",
+        "url": "https://github.com/master0071"
+      },
+      "homepage": "https://github.com/zerosloney/caveman4cn",
+      "license": "MIT",
+      "keywords": ["productivity", "communication", "brevity", "codebuddy"]
+    },
+    {
       "name": "caveman-zcode",
-      "source": "./plugins/caveman-zcode",
       "description": "Ultra-compressed communication mode for ZCode. Cut filler. Keep technical accuracy. Supports lite, full, ultra, wenyan intensity levels.",
       "version": "0.1.0",
+      "source": "./plugins/caveman-zcode",
       "category": "productivity",
-      "keywords": ["productivity", "communication", "brevity", "caveman", "zcode"],
-      "strict": true
+      "author": {
+        "name": "zerosloney",
+        "url": "https://github.com/zerosloney/caveman4cn"
+      },
+      "homepage": "https://github.com/zerosloney/caveman4cn",
+      "license": "MIT",
+      "keywords": ["productivity", "communication", "brevity", "zcode"]
     }
   ]
 }
