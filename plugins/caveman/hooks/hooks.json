@@ -1,0 +1,84 @@
+{
+  "description": "Caveman plugin hooks",
+  "hooks": {
+    "SessionStart": [
+      {
+        "matcher": "startup|clear|compact",
+        "hooks": [
+          {
+            "type": "process",
+            "command": "node",
+            "args": ["${ZCODE_PLUGIN_ROOT}/hooks/session-start.js"],
+            "timeoutMs": 10000,
+            "statusMessage": "Activating caveman mode…"
+          }
+        ]
+      }
+    ],
+    "UserPromptSubmit": [
+      {
+        "hooks": [
+          {
+            "type": "process",
+            "command": "node",
+            "args": ["${ZCODE_PLUGIN_ROOT}/hooks/caveman-mode-tracker.js"],
+            "timeoutMs": 10000,
+            "statusMessage": "Checking caveman-stats…"
+          }
+        ]
+      },
+      {
+        "hooks": [
+          {
+            "type": "process",
+            "command": "node",
+            "args": ["${ZCODE_PLUGIN_ROOT}/hooks/user-prompt.js"],
+            "timeoutMs": 5000,
+            "statusMessage": "Checking prompt…"
+          }
+        ]
+      }
+    ],
+    "PreToolUse": [
+      {
+        "matcher": "Write|Edit|Bash",
+        "hooks": [
+          {
+            "type": "process",
+            "command": "node",
+            "args": ["${ZCODE_PLUGIN_ROOT}/hooks/pre-tool-use.js"],
+            "timeoutMs": 5000,
+            "statusMessage": "Verifying tool use…"
+          }
+        ]
+      }
+    ],
+    "PostToolUse": [
+      {
+        "matcher": "Write|Edit|Bash",
+        "hooks": [
+          {
+            "type": "process",
+            "command": "node",
+            "args": ["${ZCODE_PLUGIN_ROOT}/hooks/post-tool-use.js"],
+            "timeoutMs": 5000,
+            "statusMessage": "Tracking tool usage…"
+          }
+        ]
+      }
+    ],
+    "Stop": [
+      {
+        "hooks": [
+          {
+            "type": "process",
+            "command": "node",
+            "args": ["${ZCODE_PLUGIN_ROOT}/hooks/stop.js"],
+            "timeoutMs": 5000,
+            "statusMessage": "Checking output quality…"
+          }
+        ]
+      }
+    ]
+  }
+}

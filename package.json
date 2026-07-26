@@ -1,0 +1,45 @@
+{
+  "name": "@master0071/caveman4cn",
+  "version": "0.1.0",
+  "description": "Unified Caveman plugin marketplace (master0071). One repo, two host plugins: caveman-zcode (for zCode) + caveman-codebuddy (for CodeBuddy). Ultra-compressed communication mode — cut filler, keep technical accuracy.",
+  "license": "MIT",
+  "author": {
+    "name": "master0071",
+    "url": "https://github.com/master0071"
+  },
+  "homepage": "https://github.com/zerosloney/caveman-zcode",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/zerosloney/caveman-zcode.git"
+  },
+  "bugs": {
+    "url": "https://github.com/zerosloney/caveman-zcode/issues"
+  },
+  "engines": {
+    "node": ">=18"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "bin": {
+    "caveman-zcode": "./scripts/install-zcode.js",
+    "caveman-codebuddy": "./scripts/install-codebuddy.js"
+  },
+  "scripts": {
+    "install:zcode": "node ./scripts/install-zcode.js",
+    "install:codebuddy": "node ./scripts/install-codebuddy.js",
+    "postinstall": "node ./scripts/install-zcode.js && node ./scripts/install-codebuddy.js"
+  },
+  "files": [
+    "plugins/caveman/",
+    "plugins/codebuddy/",
+    "scripts/install-zcode.js",
+    "scripts/install-codebuddy.js",
+    "skills/",
+    "marketplace.json",
+    ".codebuddy-plugin/marketplace.json",
+    "AGENTS.md",
+    "README.md",
+    "LICENSE"
+  ]
+}

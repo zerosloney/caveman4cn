@@ -1,0 +1,25 @@
+# Dependencies
+node_modules/
+
+# Python
+__pycache__/
+*.pyc
+.venv/
+
+# Benchmarks & evals
+benchmarks/results/*.json
+evals/snapshots/*.html
+evals/snapshots/*.png
+context/refs/research-brief-caveman-code-efficiency.md
+
+# Env & OS
+.env.local
+**/.DS_Store
+
+# Host-local session artifacts
+.zcode/
+.claude/worktrees/
+
+# Build artifacts
+dist/*
+!dist/caveman.skill
