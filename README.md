@@ -174,7 +174,7 @@ npx @master0071/caveman4cn
 
 ## 状态行配置（CodeBuddy Code / Qwen Code）
 
-Caveman 插件支持在 CodeBuddy Code 与 Qwen Code 界面底部显示状态行，实时显示当前压缩模式和 token 节省统计。Qwen Code 用户安装时已自动配置；CodeBuddy 用户参考下面的手动步骤。
+Caveman 插件支持在 CodeBuddy Code 与 Qwen Code 界面底部显示状态行，实时显示当前压缩模式和 token 节省统计。通过安装器（`npx @master0071/caveman-codebuddy` / `install-qwen.js`）安装时会自动写入状态行配置；**从 marketplace UI/CLI 直接安装 CodeBuddy 插件不会触发安装器**，需运行 `/caveman-statusline --setup` 补写。如状态行未生效或路径漂移（升级版本后），同样运行 `/caveman-statusline` 重新探测并写入正确路径。
 
 ### 效果预览
 
@@ -186,33 +186,36 @@ Caveman 插件支持在 CodeBuddy Code 与 Qwen Code 界面底部显示状态行
 
 ### 配置步骤（CodeBuddy）
 
-1. 编辑 `~/.codebuddy/settings.json`（用户级）或 `.codebuddy/settings.json`（项目级）
-2. 添加 `statusLine` 配置：
+推荐运行 `/caveman-statusline`（或 `/caveman-statusline --setup` 自动写入），命令会自动探测脚本真实位置（npm 安装路径或 marketplace 缓存路径）并写入 `~/.codebuddy/settings.json`。
+
+如需手动编辑，`statusLine` 在**根级**（不是 `ui` 下）：
 
 ```json
 {
   "statusLine": {
     "type": "command",
-    "command": "node ~/.codebuddy/plugins/caveman-codebuddy/scripts/statusline.js",
+    "command": "node <statusline.js 的原生绝对路径>",
     "padding": 0
   }
 }
 ```
 
-3. 重启 CodeBuddy 或执行 `/reload-plugins`
+> **Windows 路径要求**：`command` 里的路径**必须**用原生绝对路径并正斜杠（如 `C:/Users/<name>/.codebuddy/...`）。不要用 `~`（CodeBuddy 不展开），也不要用 MSYS 的 `/c/...`（node.exe 不解析，状态行会空白）。marketplace 安装的插件路径含版本号目录，升级版本后路径会变，重跑 `/caveman-statusline --setup` 即可。
+
+改完重启 CodeBuddy 或执行 `/reload-plugins`。
 
 ### 配置步骤（Qwen Code）
 
-Qwen Code 用户运行 `install-qwen.js` 时已自动写入 `ui.statusLine`，无需手动配置。若要手动调整：
+Qwen Code 用户运行 `install-qwen.js` 时已自动写入 `ui.statusLine`（写入的是原生绝对路径，非 `~` 形式），无需手动配置。若要手动调整：
 
-1. 编辑 `~/.qwen/settings.json`，在 `ui` 键下添加 `statusLine`（注意：根级别的 `statusLine` 不生效，必须在 `ui` 下）：
+1. 编辑 `~/.qwen/settings.json`，在 `ui` 键下添加 `statusLine`（注意：根级别的 `statusLine` 不生效，必须在 `ui` 下）。下面示例的 `command` 路径仅供说明结构，实际请用安装器写入的绝对路径或自行替换：
 
 ```json
 {
   "ui": {
     "statusLine": {
       "type": "command",
-      "command": "node ~/.qwen/extensions/caveman-qwen/scripts/statusline.js",
+      "command": "node <statusline.js 的原生绝对路径>",
       "refreshInterval": 5
     }
   }

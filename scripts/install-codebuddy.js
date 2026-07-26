@@ -20,12 +20,12 @@ const PLUGIN_NAME = 'caveman-codebuddy';
 const MARKETPLACE_NAME = 'master0071';
 const PLUGIN_VERSION = '0.1.0';
 
+const HOME_DIR = process.env.USERPROFILE || process.env.HOME || require('os').homedir();
 const PROJECT_ROOT = path.resolve(__dirname, '..');
-const CODEBUDDY_PLUGIN_DIR = path.join(
-  process.env.USERPROFILE || process.env.HOME,
-  '.codebuddy', 'plugins'
-);
+const CODEBUDDY_HOME = path.join(HOME_DIR, '.codebuddy');
+const CODEBUDDY_PLUGIN_DIR = path.join(CODEBUDDY_HOME, 'plugins');
 const INSTALL_DIR = path.join(CODEBUDDY_PLUGIN_DIR, PLUGIN_NAME);
+const SETTINGS_FILE = path.join(CODEBUDDY_HOME, 'settings.json');
 
 // 源文件：插件目录
 const SRC_DIR = path.join(PROJECT_ROOT, 'plugins', 'caveman-codebuddy');
@@ -98,6 +98,80 @@ function runCB(args, dryRun) {
     return execSync(cmd, { encoding: 'utf-8', stdio: 'pipe' });
   } catch (err) {
     throw new Error(err.stderr || err.message);
+  }
+}
+
+// 把 Windows 反斜杠路径转为 POSIX（正斜杠），避免 JSON/command 转义问题。
+function toPosix(p) {
+  return p.replace(/\\/g, '/');
+}
+
+// ── settings.json 读写 ────────────────────────────────────────────────
+
+function readSettings() {
+  try {
+    const raw = fs.readFileSync(SETTINGS_FILE, 'utf-8').trim();
+    return raw ? JSON.parse(raw) : {};
+  } catch (e) {
+    if (e.code === 'ENOENT') return {};
+    // 损坏的 settings.json：备份后重置，绝不静默吞掉用户配置。
+    const backup = SETTINGS_FILE + '.bak.' + Date.now();
+    try {
+      fs.copyFileSync(SETTINGS_FILE, backup);
+      console.warn(`⚠️  settings.json 解析失败，已备份到 ${backup}，将重写。`);
+    } catch {}
+    return {};
+  }
+}
+
+function writeSettings(settings) {
+  fs.mkdirSync(path.dirname(SETTINGS_FILE), { recursive: true });
+  fs.writeFileSync(SETTINGS_FILE, JSON.stringify(settings, null, 2) + '\n');
+}
+
+// CodeBuddy 状态行在根级 statusLine（区别于 Qwen 的 ui.statusLine）。
+// 命令路径必须用原生绝对路径（Windows 上 C:/... 正斜杠）—— CodeBuddy 不展开 ~，
+// node 不解析 MSYS 的 /c/，故此处用 toPosix(INSTALL_DIR) 而非 ~-style 路径。
+// 返回 true 表示 settings 已变更需写回；false 表示未改动（调用方据此跳过冗余写）。
+function mergeStatusLine(settings, dryRun) {
+  const existing = settings.statusLine;
+  const cmd = `node "${toPosix(path.join(INSTALL_DIR, 'scripts', 'statusline.js'))}"`;
+  const desired = {
+    type: 'command',
+    command: cmd,
+    padding: 0,
+  };
+
+  if (existing && typeof existing === 'object' && existing.command) {
+    if (isCavemanStatusLine(existing)) {
+      settings.statusLine = desired;
+      if (dryRun) console.log('    would update statusLine (already caveman)');
+      return true;
+    }
+    console.warn(`⚠️  statusLine 已配置且指向其它脚本，未覆盖：`);
+    console.warn(`    ${existing.command}`);
+    console.warn(`    如需启用 caveman 状态行，请手动改命令为：`);
+    console.warn(`    ${cmd}`);
+    return false;
+  }
+  settings.statusLine = desired;
+  if (dryRun) console.log('    would set statusLine');
+  return true;
+}
+
+function isCavemanStatusLine(sl) {
+  const cmd = (sl && sl.command) || '';
+  // 匹配 npm 安装路径（caveman-codebuddy/scripts/statusline.js）与 marketplace
+  // 缓存路径（caveman-codebuddy/<version>/scripts/statusline.js）—— 用宿主名 +
+  // 脚本名作锚点，避免中间的版本目录破坏子串匹配。
+  return typeof cmd === 'string' &&
+    cmd.includes('caveman-codebuddy/') &&
+    cmd.includes('scripts/statusline.js');
+}
+
+function stripStatusLine(settings) {
+  if (settings.statusLine && isCavemanStatusLine(settings.statusLine)) {
+    delete settings.statusLine;
   }
 }
 
@@ -217,9 +291,24 @@ function install(dryRun) {
     console.log(`  would run: codebuddy plugin install ${pluginId}`);
   }
 
+  // 8. 合并 statusLine 进 settings.json（路径用原生绝对形式，避免 ~ / /c/ 失效）
+  console.log(`\n→ 合并状态行到 ${SETTINGS_FILE}`);
+  if (!dryRun) {
+    const settings = readSettings();
+    const changed = mergeStatusLine(settings, false);
+    if (changed) {
+      writeSettings(settings);
+      console.log('  merged: statusLine');
+    }
+  } else {
+    const settings = readSettings();
+    mergeStatusLine(settings, true);
+  }
+
   console.log('\n✅  Installation complete!');
   console.log('   Run /reload-plugins in CodeBuddy, or start a new session.');
   console.log('   Type /caveman to enable caveman mode.');
+  console.log('   状态行将显示 ⛏ 模式指示（statusLine 已自动配置）');
 }
 
 // ── 卸载 ────────────────────────────────────────────────────────────────
@@ -264,6 +353,19 @@ function uninstall(dryRun) {
     }
   } else {
     console.log(`  would run: codebuddy plugin marketplace remove ${MARKETPLACE_NAME}`);
+  }
+
+  // 4. 从 settings.json 移除 caveman statusLine
+  if (fs.existsSync(SETTINGS_FILE)) {
+    console.log(`\n→ 清理 ${SETTINGS_FILE}`);
+    if (!dryRun) {
+      const settings = readSettings();
+      stripStatusLine(settings);
+      writeSettings(settings);
+      console.log('  removed caveman statusLine');
+    } else {
+      console.log('  would remove caveman statusLine');
+    }
   }
 
   console.log('\n✅  Uninstallation complete.');

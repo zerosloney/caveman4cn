@@ -97,7 +97,7 @@ function getLifetimeSavings() {
 /** Get git branch name for a directory. Returns null if not in a git repo. */
 function getGitBranch(cwd) {
   try {
-    const out = execSync('git -C "' + cwd + '" branch --show-current 2>/dev/null', {
+    const out = execSync('git -C "' + cwd + '" branch --show-current', {
       encoding: 'utf-8',
       timeout: 3000,
       stdio: ['ignore', 'pipe', 'ignore'],
