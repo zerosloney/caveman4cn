@@ -128,7 +128,7 @@ Qoder 的插件约定：安装器把插件铺到 `~/.qoder/plugins/caveman-qoder
 - 插件文件 → `~/.qoder/plugins/caveman-qoder/{skills,commands,agents,hooks,tools}/`
 - 清单 → `~/.qoder/plugins/caveman-qoder/.qoder-plugin/plugin.json`
 - 插件级 `hooks/hooks.json`（用 `${QODER_PLUGIN_ROOT}`，需 qodercli 登记才注入）
-- `~/.qoder/settings.json` 合并 5 个事件钩子（UserPromptSubmit/PreToolUse/PostToolUse/PostToolUseFailure/Stop）——绝对路径，无需 qodercli 登记也能工作
+- `~/.qoder/settings.json` 合并 7 个事件钩子（SessionStart/UserPromptSubmit/PreToolUse/PostToolUse/PostToolUseFailure/PreCompact/Stop）——绝对路径，无需 qodercli 登记也能工作
 
 可选：让 Qoder 正式识别插件（启用 `${QODER_PLUGIN_ROOT}` 变量注入）：
 ```
@@ -136,7 +136,7 @@ qodercli plugins marketplace add <repo-or-dir>
 qodercli plugins install caveman-qoder
 ```
 
-注意：Qoder **不支持 SessionStart 事件**（只有上述 5 个事件），caveman 模式在**首次提交 prompt 时由 UserPromptSubmit 钩子自动激活**（等价于 SessionStart）。Qoder 也**不支持 statusLine**，故无状态行功能。
+注意：Qoder **IDE 支持 5 个事件**（无 SessionStart/PreCompact），**CLI 支持 22 个事件**（含 SessionStart/PreCompact）。IDE 和 CLI 共享同一份配置——安装器注册全部 7 个事件，IDE 静默忽略它不支持的两个（SessionStart/PreCompact），CLI 则使用它们获得真正的会话启动自动激活。IDE 用户 caveman 模式在**首次提交 prompt 时由 UserPromptSubmit 钩子自动激活**（SessionStart 的等价兜底）。Qoder 也**不支持 statusLine**，故无状态行功能。
 
 安装后重启 Qoder。
 

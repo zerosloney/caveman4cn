@@ -45,16 +45,28 @@ const SUBDIRS = [
 
 // 钩子定义。command 用绝对 POSIX 路径（避免 ${QODER_PLUGIN_ROOT} 未注入的问题）。
 // timeout 单位为秒（Qoder 约定，与 CodeBuddy 一致；不同于 Qwen 的毫秒）。
-// Qoder 支持 5 事件：UserPromptSubmit/PreToolUse/PostToolUse/PostToolUseFailure/Stop
-// （无 SessionStart/PreCompact）。matcher 用 PascalCase 工具名（Qoder 原生）。
+//
+// 双运行时策略：Qoder IDE 支持 5 事件（UserPromptSubmit/PreToolUse/PostToolUse/
+// PostToolUseFailure/Stop），CLI 支持 22 事件（含 SessionStart/PreCompact 等）。
+// IDE 和 CLI 共享同一份 settings.json。这里注册全部 7 个事件——IDE 静默忽略
+// 它不支持的事件（SessionStart/PreCompact），CLI 则使用它们获得真正的会话启动
+// 自动激活。matcher 用 PascalCase 工具名（Qoder 原生）。
 const HOOK_EVENTS = [
+  {
+    event: 'SessionStart',
+    matcher: 'startup|clear|compact',
+    script: 'session-start.js',
+    timeout: 10,
+    name: 'caveman-session-start',
+    description: 'Activate caveman mode and inject rules (CLI only; IDE ignores)',
+  },
   {
     event: 'UserPromptSubmit',
     matcher: '',
     script: 'user-prompt.js',
     timeout: 10,
     name: 'caveman-user-prompt',
-    description: 'Activate caveman mode (SessionStart fallback), track mode, handle /caveman commands',
+    description: 'Activate caveman mode (IDE fallback for missing SessionStart), track mode, /caveman commands',
   },
   {
     event: 'PreToolUse',
@@ -79,6 +91,14 @@ const HOOK_EVENTS = [
     timeout: 10,
     name: 'caveman-post-tool-use-failure',
     description: 'Provide compressed recovery advice on tool failure',
+  },
+  {
+    event: 'PreCompact',
+    matcher: 'auto|manual',
+    script: 'pre-compact.js',
+    timeout: 5,
+    name: 'caveman-pre-compact',
+    description: 'Inject caveman rules into compression guidance (CLI only; IDE ignores)',
   },
   {
     event: 'Stop',
@@ -284,7 +304,7 @@ function install(dryRun) {
     const settings = readSettings();
     mergeHooks(settings, false);
     writeSettings(settings);
-    console.log('  merged: 5 hooks (UserPromptSubmit/PreToolUse/PostToolUse/PostToolUseFailure/Stop)');
+    console.log('  merged: 7 hooks (SessionStart/UserPromptSubmit/PreToolUse/PostToolUse/PostToolUseFailure/PreCompact/Stop)');
   } else {
     const settings = readSettings();
     mergeHooks(settings, true);
