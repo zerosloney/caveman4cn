@@ -7,13 +7,13 @@
     "name": "master0071",
     "url": "https://github.com/master0071"
   },
-  "homepage": "https://github.com/zerosloney/caveman-zcode",
+  "homepage": "https://github.com/zerosloney/caveman4cn",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/zerosloney/caveman-zcode.git"
+    "url": "git+https://github.com/zerosloney/caveman4cn.git"
   },
   "bugs": {
-    "url": "https://github.com/zerosloney/caveman-zcode/issues"
+    "url": "https://github.com/zerosloney/caveman4cn/issues"
   },
   "engines": {
     "node": ">=18"

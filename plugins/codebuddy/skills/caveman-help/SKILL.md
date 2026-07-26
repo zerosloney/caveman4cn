@@ -60,4 +60,4 @@ Resolution: env var > config file > `full`.
 
 ## More
 
-Full docs: https://github.com/zerosloney/caveman-codebuddy
+Full docs: https://github.com/zerosloney/caveman4cn

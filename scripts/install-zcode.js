@@ -128,7 +128,7 @@ function install(dryRun) {
     let marketplace = {
       name: MARKETPLACE,
       description: 'Caveman plugin for ZCode — ultra-compressed communication mode',
-      owner: { name: 'zerosloney', url: 'https://github.com/zerosloney/caveman-zcode' },
+      owner: { name: 'zerosloney', url: 'https://github.com/zerosloney/caveman4cn' },
       plugins: [],
       version: 1,
     };
@@ -143,7 +143,7 @@ function install(dryRun) {
       name: PLUGIN_NAME,
       source: 'filesystem',
       version: PLUGIN_VERSION,
-      author: { name: 'zerosloney', url: 'https://github.com/zerosloney/caveman-zcode' },
+      author: { name: 'zerosloney', url: 'https://github.com/zerosloney/caveman4cn' },
       category: 'productivity',
       displayName: 'Caveman',
       displayName_i18n: { 'zh-CN': '原始人模式' }

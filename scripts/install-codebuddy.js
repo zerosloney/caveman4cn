@@ -127,9 +127,9 @@ function ensureMarketplaceManifest() {
     source: `./${PLUGIN_NAME}`,
     category: 'productivity',
     author: { name: 'master0071', url: 'https://github.com/master0071' },
-    homepage: 'https://github.com/zerosloney/caveman-codebuddy',
+    homepage: 'https://github.com/zerosloney/caveman4cn',
     license: 'MIT',
-    tags: ['productivity', 'communication', 'brevity', 'codebuddy']
+    keywords: ['productivity', 'communication', 'brevity', 'codebuddy']
   };
   if (idx >= 0) {
     data.plugins[idx] = entry;

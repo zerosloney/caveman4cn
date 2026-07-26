@@ -3,7 +3,7 @@
   "description": "Caveman plugin marketplace (zcode + codebuddy) — ultra-compressed communication mode. Add this repo in zcode to get caveman-zcode, or in codebuddy to get caveman-codebuddy.",
   "owner": {
     "name": "master0071",
-    "url": "https://github.com/zerosloney/caveman-zcode"
+    "url": "https://github.com/zerosloney/caveman4cn"
   },
   "plugins": [
     {
@@ -12,7 +12,7 @@
       "description": "Ultra-compressed communication mode for ZCode. Cut filler. Keep technical accuracy. Supports lite, full, ultra, wenyan intensity levels.",
       "version": "0.1.0",
       "category": "productivity",
-      "tags": ["productivity", "communication", "brevity", "caveman", "zcode"],
+      "keywords": ["productivity", "communication", "brevity", "caveman", "zcode"],
       "strict": true
     }
   ]

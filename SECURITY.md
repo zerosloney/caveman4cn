@@ -6,7 +6,7 @@ This repo only supports the latest stable release of the `master0071` marketplac
 
 ## Reporting a Vulnerability
 
-If you discover a security flaw — such as arbitrary shell execution via a hook, workspace folder escapes, credential hijack via injected prompts, or malicious JSON parsing in the stats hook — **do not open a public issue**. Report it privately by contacting the maintainer via [GitHub's private vulnerability reporting](https://github.com/zerosloney/caveman-codebuddy/security/advisories/new) or email.
+If you discover a security flaw — such as arbitrary shell execution via a hook, workspace folder escapes, credential hijack via injected prompts, or malicious JSON parsing in the stats hook — **do not open a public issue**. Report it privately by contacting the maintainer via [GitHub's private vulnerability reporting](https://github.com/zerosloney/caveman4cn/security/advisories/new) or email.
 
 ## Privacy & Telemetry
 

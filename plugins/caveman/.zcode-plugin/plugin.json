@@ -4,10 +4,10 @@
   "description": "Ultra-compressed communication mode for ZCode. Cut filler. Keep technical accuracy. Supports intensity levels: lite, full, ultra, wenyan.",
   "author": {
     "name": "zerosloney",
-    "url": "https://github.com/zerosloney/caveman-zcode"
+    "url": "https://github.com/zerosloney/caveman4cn"
   },
-  "homepage": "https://github.com/zerosloney/caveman-zcode",
-  "repository": "https://github.com/zerosloney/caveman-zcode",
+  "homepage": "https://github.com/zerosloney/caveman4cn",
+  "repository": "https://github.com/zerosloney/caveman4cn",
   "license": "MIT",
   "keywords": [
     "productivity",
