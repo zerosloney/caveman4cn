@@ -1,7 +1,7 @@
 {
   "name": "@master0071/caveman4cn",
   "version": "0.1.0",
-  "description": "Unified Caveman plugin marketplace (master0071). One repo, four host plugins: caveman-zcode (ZCode) + caveman-codebuddy (CodeBuddy) + caveman-trae (Trae IDE) + caveman-qwen (Qwen Code). Ultra-compressed communication mode — cut filler, keep technical accuracy.",
+  "description": "Unified Caveman plugin marketplace (master0071). One repo, five host plugins: caveman-zcode (ZCode) + caveman-codebuddy (CodeBuddy) + caveman-trae (Trae IDE) + caveman-qwen (Qwen Code) + caveman-qoder (Qoder). Ultra-compressed communication mode — cut filler, keep technical accuracy.",
   "license": "MIT",
   "author": {
     "name": "master0071",
@@ -25,24 +25,28 @@
     "caveman-zcode": "./scripts/install-zcode.js",
     "caveman-codebuddy": "./scripts/install-codebuddy.js",
     "caveman-trae": "./scripts/install-trae.js",
-    "caveman-qwen": "./scripts/install-qwen.js"
+    "caveman-qwen": "./scripts/install-qwen.js",
+    "caveman-qoder": "./scripts/install-qoder.js"
   },
   "scripts": {
     "install:zcode": "node ./scripts/install-zcode.js",
     "install:codebuddy": "node ./scripts/install-codebuddy.js",
     "install:trae": "node ./scripts/install-trae.js",
     "install:qwen": "node ./scripts/install-qwen.js",
-    "postinstall": "node ./scripts/install-zcode.js && node ./scripts/install-codebuddy.js && node ./scripts/install-trae.js && node ./scripts/install-qwen.js"
+    "install:qoder": "node ./scripts/install-qoder.js",
+    "postinstall": "node ./scripts/install-zcode.js && node ./scripts/install-codebuddy.js && node ./scripts/install-trae.js && node ./scripts/install-qwen.js && node ./scripts/install-qoder.js"
   },
   "files": [
     "plugins/caveman-zcode/",
     "plugins/caveman-codebuddy/",
     "plugins/caveman-trae/",
     "plugins/caveman-qwen/",
+    "plugins/caveman-qoder/",
     "scripts/install-zcode.js",
     "scripts/install-codebuddy.js",
     "scripts/install-trae.js",
     "scripts/install-qwen.js",
+    "scripts/install-qoder.js",
     "skills/",
     "marketplace.json",
     ".codebuddy-plugin/marketplace.json",

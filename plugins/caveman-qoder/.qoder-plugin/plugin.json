@@ -1,0 +1,31 @@
+{
+  "name": "caveman-qoder",
+  "version": "0.1.0",
+  "description": "Ultra-compressed communication mode for Qoder. Cut filler. Keep technical accuracy. Supports intensity levels: lite, full (default), ultra, wenyan-lite, wenyan-full, wenyan-ultra.",
+  "author": {
+    "name": "zerosloney",
+    "url": "https://github.com/zerosloney/caveman4cn"
+  },
+  "homepage": "https://github.com/zerosloney/caveman4cn",
+  "repository": "https://github.com/zerosloney/caveman4cn",
+  "license": "MIT",
+  "keywords": [
+    "productivity",
+    "communication",
+    "brevity",
+    "qoder"
+  ],
+  "category": "Productivity",
+  "commands": "commands",
+  "agents": "agents",
+  "skills": [
+    "skills/caveman",
+    "skills/caveman-commit",
+    "skills/caveman-compress",
+    "skills/caveman-help",
+    "skills/caveman-review",
+    "skills/caveman-stats",
+    "skills/cavecrew"
+  ],
+  "hooks": "hooks/hooks.json"
+}

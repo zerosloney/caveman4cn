@@ -1,0 +1,68 @@
+{
+  "description": "Caveman Qoder hooks. Qoder supports 5 events: UserPromptSubmit, PreToolUse, PostToolUse, PostToolUseFailure, Stop (no SessionStart/PreCompact). Caveman activation is folded into UserPromptSubmit as a fallback for the missing SessionStart event.",
+  "hooks": {
+    "UserPromptSubmit": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node \"${QODER_PLUGIN_ROOT}/hooks/user-prompt.js\"",
+            "description": "Activate caveman mode (fallback for missing SessionStart), track mode, handle /caveman commands, per-turn reinforcement",
+            "timeout": 10
+          }
+        ]
+      }
+    ],
+    "PreToolUse": [
+      {
+        "matcher": "Bash|Write|Edit",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node \"${QODER_PLUGIN_ROOT}/hooks/pre-tool-use.js\"",
+            "description": "Block dangerous operations (rm -rf, system file writes, etc.)",
+            "timeout": 10
+          }
+        ]
+      }
+    ],
+    "PostToolUse": [
+      {
+        "matcher": "Bash|Write|Edit",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node \"${QODER_PLUGIN_ROOT}/hooks/post-tool-use.js\"",
+            "description": "Track tool usage for stats",
+            "timeout": 10
+          }
+        ]
+      }
+    ],
+    "PostToolUseFailure": [
+      {
+        "matcher": "Bash|Write|Edit",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node \"${QODER_PLUGIN_ROOT}/hooks/post-tool-use-failure.js\"",
+            "description": "Provide compressed recovery advice on tool failure",
+            "timeout": 10
+          }
+        ]
+      }
+    ],
+    "Stop": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node \"${QODER_PLUGIN_ROOT}/hooks/stop.js\"",
+            "description": "Check output quality when caveman mode is active",
+            "timeout": 10
+          }
+        ]
+      }
+    ]
+  }
+}
