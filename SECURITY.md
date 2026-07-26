@@ -1,46 +1,46 @@
-# Security Policy
+# 安全策略
 
-## Supported Versions
+## 受支持版本
 
-This repo only supports the latest stable release of the `master0071` marketplace plugins (`caveman-zcode`, `caveman-codebuddy`) with security patches.
+本仓库仅支持 `master0071` 市场插件（`caveman-zcode`、`caveman-codebuddy`）的最新稳定版，提供安全补丁。
 
-## Reporting a Vulnerability
+## 报告漏洞
 
-If you discover a security flaw — such as arbitrary shell execution via a hook, workspace folder escapes, credential hijack via injected prompts, or malicious JSON parsing in the stats hook — **do not open a public issue**. Report it privately by contacting the maintainer via [GitHub's private vulnerability reporting](https://github.com/zerosloney/caveman4cn/security/advisories/new) or email.
+如果你发现安全缺陷——比如通过 hook 的任意 shell 执行、工作区目录逃逸、通过注入 prompt 劫持凭据、或 stats hook 里的恶意 JSON 解析——**不要开公开 issue**。通过 [GitHub 私密漏洞上报](https://github.com/zerosloney/caveman4cn/security/advisories/new)或邮件私密联系维护者。
 
-## Privacy & Telemetry
+## 隐私与遥测
 
-**No telemetry. Zero.** There is no analytics, crash reporting, account system, or backend to receive data. Nothing about your code, prompts, or sessions is transmitted anywhere.
+**无遥测。零。** 没有分析、崩溃上报、账户系统或接收数据的后端。你的代码、prompt 或会话的任何信息都不会被传到任何地方。
 
-### After install: zero network calls
+### 安装后：零网络调用
 
-Once a plugin is installed, it makes no network connections. Verifiable by auditing this repo:
+插件一旦安装，不发任何网络连接。审计本仓库即可验证：
 
-- **Skills** (`skills/*/SKILL.md`) are markdown prompts — no executable code, no network.
-- **Hooks** (`plugins/caveman-codebuddy/hooks/*.js`, `plugins/caveman-zcode/hooks/*.js`) are local Node scripts. They read and write local files only (session transcripts, the `~/.caveman-active` flag, `~/.caveman/lifetime-saved.json`) and contain no HTTP, fetch, or socket modules.
-- **`/caveman-stats`** parses local CodeBuddy/ZCode session JSONL files under `~/.codebuddy/projects/` (or `~/.zcode/cli/agents/`) to display token counts. It uses a hardcoded compression constant (2.86) and transmits nothing.
-- **`/caveman-compress`** does local file I/O only — it rewrites one explicitly named local file and creates a `.original.md` backup. No globbing, no shell-out.
-- **`/caveman-init`** writes the activation rule into the target repo's `AGENTS.md`. One local file write. No network.
-- **`pre-tool-use.js`** (CodeBuddy safety hook) inspects the incoming tool call against a hardcoded denylist of destructive patterns (rm -rf /, system file writes, etc.) and returns allow/deny. It reads stdin, writes stdout, touches nothing on disk.
+- **Skills**（`skills/*/SKILL.md`）是 markdown prompt——无可执行代码、无网络。
+- **Hooks**（`plugins/caveman-codebuddy/hooks/*.js`、`plugins/caveman-zcode/hooks/*.js`）是本地 Node 脚本。它们只读写本地文件（会话记录、`~/.caveman-active` flag、`~/.caveman/lifetime-saved.json`），不含 HTTP、fetch 或 socket 模块。
+- **`/caveman-stats`** 解析 `~/.codebuddy/projects/`（或 `~/.zcode/cli/agents/`）下的本地 CodeBuddy/ZCode 会话 JSONL 文件以显示 token 计数。它用硬编码的压缩常数（2.86），不传输任何东西。
+- **`/caveman-compress`** 只做本地文件 I/O——它重写一个明确命名的本地文件并创建 `.original.md` 备份。无 globbing、无 shell-out。
+- **`/caveman-init`** 把激活规则写进目标仓库的 `AGENTS.md`。一次本地文件写入。无网络。
+- **`pre-tool-use.js`**（CodeBuddy 安全 hook）针对硬编码的破坏性模式 denylist（rm -rf /、系统文件写入等）检查传入的工具调用并返回 allow/deny。它读 stdin、写 stdout，磁盘上不触碰任何东西。
 
-### At install time: exactly these network requests, nothing else
+### 安装时：恰好这些网络请求，别无其他
 
-The only network activity happens when you run an installer or add the marketplace:
+唯一发生在你运行安装器或添加市场时的网络活动：
 
-- `node scripts/install-codebuddy.js` / `install-zcode.js` copy plugin files into the host's plugin directory and run `codebuddy plugin install` / the ZCode equivalent, which fetches from this repo via GitHub.
-- `/plugin marketplace add zerosloney/caveman-codebuddy` (or the zcode variant) clones the repo from GitHub.
+- `node scripts/install-codebuddy.js` / `install-zcode.js` 把插件文件复制进宿主的插件目录，并运行 `codebuddy plugin install` / ZCode 等价命令，后者通过 GitHub 从本仓库拉取。
+- `/plugin marketplace add zerosloney/caveman-codebuddy`（或 zcode 变体）从 GitHub 克隆仓库。
 
-No data is uploaded during these steps.
+这些步骤中不上传任何数据。
 
-### What stays on your machine
+### 留在你机器上的东西
 
-All data is local: skill files, the `~/.caveman-active` mode flag, `~/.caveman/lifetime-saved.json` stats badge, `.original.md` backups. To remove what the installer wrote, run `node scripts/install-codebuddy.js --uninstall` (or the zcode equivalent).
+所有数据都是本地的：skill 文件、`~/.caveman-active` 模式 flag、`~/.caveman-active.prev`（一次性命令用完恢复之前模式的临时状态）、`~/.caveman-mode-log.jsonl`（模式转换的本地审计日志，用于 caveman-stats 归因）、`~/.caveman/lifetime-saved.json` 统计徽章、`.original.md` 备份。要移除安装器写入的内容，运行 `node scripts/install-codebuddy.js --uninstall`（或 zcode 等价命令）。
 
-### Enterprise / air-gapped use
+### 企业 / 气隙使用
 
-After install, the plugin is self-contained and fully functional offline. No license server, no external backend. For air-gapped systems, clone this repo internally and run the installer against the local copy.
+安装后，插件自包含，完全离线可用。无许可证服务器、无外部后端。气隙系统可内部克隆本仓库并对本地副本运行安装器。
 
-## About scanner warnings
+## 关于扫描器警告
 
-- **Snyk "High Risk" on `caveman-compress`:** this skill reads, rewrites, and backs up a user-specified file. In-place file rewriting triggers generic risk scoring. It is a known, intended capability — no hidden network access, no shell execution, only explicitly named files. See `plugins/caveman-codebuddy/skills/caveman-compress/SECURITY.md` for the per-skill breakdown.
-- **Hook scripts flagged for subprocess/file-I/O patterns:** the hooks invoke `node` to parse stdin JSON and emit stdout JSON. They do not spawn arbitrary processes, do not read files outside the documented paths, and fail open (SessionStart/UserPromptSubmit) or fail closed (PreToolUse safety guard) on any error.
+- **Snyk 对 `caveman-compress` 标 "High Risk"：** 本技能读取、重写并备份一个用户指定的文件。原地文件重写会触发通用风险评分。这是已知的、有意的能力——无隐藏网络访问、无 shell 执行、仅明确命名的文件。见 `plugins/caveman-codebuddy/skills/caveman-compress/SECURITY.md` 的逐技能说明。
+- **Hook 脚本因子进程/文件 I/O 模式被标记：** hook 调用 `node` 解析 stdin JSON 并发出 stdout JSON。它们不 spawn 任意进程、不读文档化路径之外的文件、并在任何错误时 fail open（SessionStart/UserPromptSubmit）或 fail closed（PreToolUse 安全防护）。

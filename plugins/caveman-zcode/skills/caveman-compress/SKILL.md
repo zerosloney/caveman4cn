@@ -5,89 +5,90 @@ description: >
   to save input tokens. Preserves all technical substance, code, URLs, and structure.
   Compressed version overwrites the original file. Human-readable backup saved as FILE.original.md.
   Trigger: /caveman-compress FILEPATH or "compress memory file"
+  中文触发：用户说"压缩文件""压缩 md""省 token""压缩记忆文件"，或调用 /caveman-compress <文件路径> 时触发。
 ---
 
 # Caveman Compress
 
-## Purpose
+## 用途
 
-Compress natural language files (CLAUDE.md, todos, preferences) into caveman-speak to reduce input tokens. Compressed version overwrites original. Human-readable backup saved as `<filename>.original.md`.
+把自然语言文件（CLAUDE.md、todos、preferences）压缩成 caveman 语体以削减 input token。压缩版覆盖原文件。人类可读备份保存为 `<filename>.original.md`。
 
-## Trigger
+## 触发
 
-`/caveman-compress <filepath>` or when user asks to compress a memory file.
+`/caveman-compress <filepath>` 或用户要求压缩某个 memory 文件时。
 
-## Process
+## 流程
 
-1. The compression scripts live in `scripts/` (adjacent to this SKILL.md). If the path is not immediately available, search for `scripts/__main__.py` next to this SKILL.md.
+1. 压缩脚本位于 `scripts/`（与本 SKILL.md 相邻）。路径未立即可用时，在本 SKILL.md 旁搜索 `scripts/__main__.py`。
 
-2. From the directory containing this SKILL.md, run:
+2. 在包含本 SKILL.md 的目录下，运行：
 
 python3 -m scripts <absolute_filepath>
 
-3. The CLI will:
-- detect file type (no tokens)
-- call Claude to compress
-- validate output (no tokens)
-- if errors: cherry-pick fix with Claude (targeted fixes only, no recompression)
-- retry up to 2 times
-- if still failing after 2 retries: report error to user, leave original file untouched
+3. CLI 会：
+- 检测文件类型（不耗 token）
+- 调用 Claude 压缩
+- 校验输出（不耗 token）
+- 出错时：用 Claude 定点修复（仅针对性修复，不重新压缩）
+- 最多重试 2 次
+- 2 次重试仍失败：向用户报错，原文件保持不动
 
-4. Return result to user
+4. 向用户返回结果
 
-## Compression Rules
+## 压缩规则
 
-### Remove
-- Articles: a, an, the
-- Filler: just, really, basically, actually, simply, essentially, generally
-- Pleasantries: "sure", "certainly", "of course", "happy to", "I'd recommend"
-- Hedging: "it might be worth", "you could consider", "it would be good to"
-- Redundant phrasing: "in order to" → "to", "make sure to" → "ensure", "the reason is because" → "because"
-- Connective fluff: "however", "furthermore", "additionally", "in addition"
+### 删除
+- 冠词：a, an, the
+- 填充词：just, really, basically, actually, simply, essentially, generally
+- 客套："sure", "certainly", "of course", "happy to", "I'd recommend"
+- 对冲："it might be worth", "you could consider", "it would be good to"
+- 冗余措辞："in order to" → "to", "make sure to" → "ensure", "the reason is because" → "because"
+- 连接废话："however", "furthermore", "additionally", "in addition"
 
-### Preserve EXACTLY (never modify)
-- Code blocks (fenced ``` and indented)
-- Inline code (`backtick content`)
-- URLs and links (full URLs, markdown links)
-- File paths (`/src/components/...`, `./config.yaml`)
-- Commands (`npm install`, `git commit`, `docker build`)
-- Technical terms (library names, API names, protocols, algorithms)
-- Proper nouns (project names, people, companies)
-- Dates, version numbers, numeric values
-- Environment variables (`$HOME`, `NODE_ENV`)
+### 逐字保留（绝不修改）
+- 代码块（fenced ``` 和缩进）
+- 行内代码（`backtick content`）
+- URL 和链接（完整 URL、markdown 链接）
+- 文件路径（`/src/components/...`, `./config.yaml`）
+- 命令（`npm install`, `git commit`, `docker build`）
+- 技术术语（库名、API 名、协议、算法）
+- 专有名词（项目名、人名、公司名）
+- 日期、版本号、数值
+- 环境变量（`$HOME`, `NODE_ENV`）
 
-### Preserve Structure
-- All markdown headings (keep exact heading text, compress body below)
-- Bullet point hierarchy (keep nesting level)
-- Numbered lists (keep numbering)
-- Tables (compress cell text, keep structure)
-- Frontmatter/YAML headers in markdown files
+### 保留结构
+- 所有 markdown 标题（保留精确标题文本，压缩下方正文）
+- 列表层级（保留嵌套层级）
+- 有序列表（保留编号）
+- 表格（压缩单元格文本，保留结构）
+- markdown 文件的 frontmatter/YAML 头
 
-### Compress
-- Use short synonyms: "big" not "extensive", "fix" not "implement a solution for", "use" not "utilize"
-- Fragments OK: "Run tests before commit" not "You should always run tests before committing"
-- Drop "you should", "make sure to", "remember to" — just state the action
-- Merge redundant bullets that say the same thing differently
-- Keep one example where multiple examples show the same pattern
+### 压缩
+- 用短同义词："big" 而非 "extensive"，"fix" 而非 "implement a solution for"，"use" 而非 "utilize"
+- 片段可用："Run tests before commit" 而非 "You should always run tests before committing"
+- 删除 "you should", "make sure to", "remember to" —— 直接陈述动作
+- 合并意思重复的条目
+- 多个示例展示同一模式时只保留一个
 
-CRITICAL RULE:
-Anything inside ``` ... ``` must be copied EXACTLY.
-Do not:
-- remove comments
-- remove spacing
-- reorder lines
-- shorten commands
-- simplify anything
+关键规则：
+``` ... ``` 内的任何内容必须逐字复制。
+不要：
+- 删除注释
+- 删除空格
+- 重排行序
+- 缩短命令
+- 简化任何东西
 
-Inline code (`...`) must be preserved EXACTLY.
-Do not modify anything inside backticks.
+行内代码（`...`）必须逐字保留。
+不要修改反引号内的任何内容。
 
-If file contains code blocks:
-- Treat code blocks as read-only regions
-- Only compress text outside them
-- Do not merge sections around code
+如果文件含代码块：
+- 把代码块视为只读区域
+- 只压缩代码块外的文本
+- 不要合并代码块周围的章节
 
-## Pattern
+## 模式
 
 Original:
 > You should always make sure to run the test suite before pushing any changes to the main branch. This is important because it helps catch bugs early and prevents broken builds from being deployed to production.
@@ -101,11 +102,11 @@ Original:
 Compressed:
 > Microservices architecture. API gateway route all requests to services. Auth service manage user sessions + JWT tokens.
 
-## Boundaries
+## 边界
 
-- ONLY compress natural language files (.md, .txt, .typ, .typst, .tex, extensionless)
-- NEVER modify: .py, .js, .ts, .json, .yaml, .yml, .toml, .env, .lock, .css, .html, .xml, .sql, .sh
-- If file has mixed content (prose + code), compress ONLY the prose sections
-- If unsure whether something is code or prose, leave it unchanged
-- Original file is backed up as FILE.original.md before overwriting
-- Never compress FILE.original.md (skip it)
+- 仅压缩自然语言文件（.md, .txt, .typ, .typst, .tex, 无扩展名）
+- 绝不修改：.py, .js, .ts, .json, .yaml, .yml, .toml, .env, .lock, .css, .html, .xml, .sql, .sh
+- 文件含混合内容（散文 + 代码）时，仅压缩散文部分
+- 不确定某段是代码还是散文时，保持不变
+- 原文件覆盖前备份为 FILE.original.md
+- 绝不压缩 FILE.original.md（跳过它）

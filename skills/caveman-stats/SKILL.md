@@ -5,6 +5,7 @@ description: >
   Reads directly from the Claude Code session log — no AI estimation.
   Triggers on /caveman-stats. Output is injected by the mode-tracker hook;
   the model itself does not compute the numbers.
+  中文触发：用户说"token 统计""省了多少""会话用量"，或调用 /caveman-stats 时触发。
 ---
 
-This skill is delivered by `hooks/caveman-stats.js` (read by `hooks/caveman-mode-tracker.js` on `/caveman-stats`). The model does not need to do anything when this skill fires — the hook returns `decision: "block"` with the formatted stats as the reason. The user sees the numbers immediately.
+本技能由 `hooks/caveman-stats.js` 提供（`hooks/caveman-mode-tracker.js` 在 `/caveman-stats` 时读取它）。本技能触发时模型无需做任何事——hook 返回 `decision: "block"`，并把格式化后的统计作为 reason。用户立即看到数字。

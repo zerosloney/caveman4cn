@@ -1,20 +1,20 @@
 # caveman-stats
 
-Real session token receipts. No AI estimation.
+真实会话 token 凭据。无 AI 估算。
 
-## What it does
+## 它做什么
 
-Reads ZCode session logs directly and reports actual input/output token usage plus estimated savings versus a non-caveman baseline. Numbers come from the JSONL transcripts on disk (`~/.zcode/cli/agents/sess_*/agent_*/transcript.jsonl`, `model_complete` records' `payload.usage`) — the model itself does not compute or estimate them. Output is produced by the `caveman-mode-tracker` `UserPromptSubmit` hook, which intercepts `/caveman-stats` and returns the formatted stats via `continue: false` + `reason`.
+直接读取 ZCode 会话日志，报告实际 input/output token 用量，并对照非 caveman 基线估算节省量。数字来自磁盘上的 JSONL 会话记录（`~/.zcode/cli/agents/sess_*/agent_*/transcript.jsonl`，`model_complete` 记录的 `payload.usage`）——模型本身不计算也不估算。输出由 `caveman-mode-tracker` 的 `UserPromptSubmit` hook 产生，它拦截 `/caveman-stats` 并通过 `continue: false` + `reason` 返回格式化后的统计。
 
-Each run also writes a lifetime-savings file (`~/.caveman/lifetime-saved.json`) that a statusline badge can read (`⛏ 12.4k`).
+每次运行还写入一个累计节省文件（`~/.caveman/lifetime-saved.json`），状态栏徽章可读取（`⛏ 12.4k`）。
 
-## How to invoke
+## 如何调用
 
 ```
 /caveman-stats
 ```
 
-## Example output
+## 示例输出
 
 ```
 Session: 47 turns
@@ -24,7 +24,7 @@ Baseline: 11,247 tokens (estimated without caveman)
 Saved:    7,356 tokens (~65%)
 ```
 
-## See also
+## 另见
 
-- [`SKILL.md`](./SKILL.md) — hook contract and mechanics
-- [Caveman README](../../README.md) — repo overview
+- [`SKILL.md`](./SKILL.md) —— hook 契约与机制
+- [Caveman README](../../README.md) —— 仓库总览

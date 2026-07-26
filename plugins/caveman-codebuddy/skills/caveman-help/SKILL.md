@@ -4,60 +4,61 @@ description: >
   Quick-reference card for all caveman modes, skills, and commands.
   One-shot display, not a persistent mode. Trigger: /caveman-help,
   "caveman help", "what caveman commands", "how do I use caveman".
+  中文触发：用户说"caveman 帮助""有哪些命令""速查卡""怎么用 caveman"，或调用 /caveman-help 时触发。
 ---
 
 # Caveman Help
 
-Display this reference card when invoked. One-shot — do NOT change mode, write flag files, or persist anything. Output in caveman style.
+被调用时显示这张参考卡。一次性——不要切换模式、不要写 flag 文件、不要持久化任何东西。以 caveman 风格输出。
 
-## Modes
+## 模式
 
-| Mode | Trigger | What change |
+| 模式 | 触发 | 改变什么 |
 |------|---------|-------------|
-| **Lite** | `/caveman lite` | Drop filler. Keep sentence structure. |
-| **Full** | `/caveman` | Drop articles, filler, pleasantries, hedging. Fragments OK. Default. |
-| **Ultra** | `/caveman ultra` | Extreme compression. Bare fragments. Tables over prose. |
-| **Wenyan-Lite** | `/caveman wenyan-lite` | Classical Chinese style, light compression. |
-| **Wenyan-Full** | `/caveman wenyan` | Full 文言文. Maximum classical terseness. |
-| **Wenyan-Ultra** | `/caveman wenyan-ultra` | Extreme. Ancient scholar on a budget. |
+| **Lite** | `/caveman lite` | 删填充词。保留句子结构。 |
+| **Full** | `/caveman` | 删冠词、填充、客套、对冲。片段可用。默认。 |
+| **Ultra** | `/caveman ultra` | 极致压缩。裸片段。表格优先于散文。 |
+| **Wenyan-Lite** | `/caveman wenyan-lite` | 文言文体，轻度压缩。 |
+| **Wenyan-Full** | `/caveman wenyan` | 完全文言文。最大古典简洁度。 |
+| **Wenyan-Ultra** | `/caveman wenyan-ultra` | 极致。预算吃紧的古代书生。 |
 
-Mode stick until changed or session end.
+模式持续直到被更改或会话结束。
 
-## Skills
+## 技能
 
-| Skill | Trigger | What it do |
+| 技能 | 触发 | 做什么 |
 |-------|---------|-----------|
-| **caveman-commit** | `/caveman-commit` | Terse commit messages. Conventional Commits. ≤50 char subject. |
-| **caveman-review** | `/caveman-review` | One-line PR comments: `L42: bug: user null. Add guard.` |
-| **caveman-compress** | `/caveman-compress <file>` | Compress .md files to caveman prose. Saves ~46% input tokens. |
-| **caveman-help** | `/caveman-help` | This card. |
+| **caveman-commit** | `/caveman-commit` | 简短 commit message。Conventional Commits。≤50 字符标题。 |
+| **caveman-review** | `/caveman-review` | 一行 PR 评论：`L42: bug: user null. Add guard.` |
+| **caveman-compress** | `/caveman-compress <file>` | 把 .md 文件压缩成 caveman 散文。省约 46% input token。 |
+| **caveman-help** | `/caveman-help` | 本卡。 |
 
-## Deactivate
+## 停用
 
-Say "stop caveman" or "normal mode". Resume anytime with `/caveman`.
+说 "stop caveman" 或 "normal mode"。随时用 `/caveman` 恢复。
 
-## Language
+## 语言
 
-Keep user's language by default. User write Portuguese → reply Portuguese caveman. Compress the style, not the language. Technical terms, code, commands, commit types, and exact error strings stay verbatim unless user ask for translation.
+默认保留用户语言。用户写葡萄牙语 → 用葡萄牙语 caveman 回复。压缩风格，不压缩语言。技术术语、代码、命令、commit 类型、精确错误串逐字保留，除非用户要求翻译。
 
-## Configure Default Mode
+## 配置默认模式
 
-Default mode = `full`. Change it:
+默认模式 = `full`。可更改：
 
-**Environment variable** (highest priority):
+**环境变量**（最高优先级）：
 ```bash
 export CAVEMAN_DEFAULT_MODE=ultra
 ```
 
-**Config file** (`~/.config/caveman/config.json`):
+**配置文件**（`~/.config/caveman/config.json`）：
 ```json
 { "defaultMode": "lite" }
 ```
 
-Set `"off"` to disable auto-activation on session start. User can still activate manually with `/caveman`.
+设为 `"off"` 可在会话启动时禁用自动激活。用户仍可用 `/caveman` 手动激活。
 
-Resolution: env var > config file > `full`.
+解析顺序：环境变量 > 配置文件 > `full`。
 
-## More
+## 更多
 
-Full docs: https://github.com/zerosloney/caveman4cn
+完整文档：https://github.com/zerosloney/caveman4cn

@@ -1,5 +1,5 @@
 ---
-description: Drop the always-on caveman activation rule into the current repo
+description: Drop the always-on caveman activation rule into the current repo. 中文：把常驻 caveman 激活规则写入当前仓库
 argument-hint: "[--dry-run|--force]"
 ---
 

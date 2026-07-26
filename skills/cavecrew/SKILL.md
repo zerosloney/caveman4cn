@@ -9,31 +9,32 @@ description: >
   context lasts longer across long sessions.
   Trigger: "delegate to subagent", "use cavecrew", "spawn investigator/builder/reviewer",
   "save context", "compressed agent output".
+  中文触发：用户说"委派子代理""用 cavecrew""spawn investigator/builder/reviewer""节省上下文""压缩代理输出"时触发。
 ---
 
-Cavecrew = three subagent presets that emit caveman output. Same job as Anthropic defaults (`Explore`, edit-style agents, reviewer); difference is the tool-result they return is compressed, so main context shrinks per delegation.
+Cavecrew = 三个输出 caveman 内容的子代理预设。职能同 Anthropic 默认（`Explore`、编辑型代理、reviewer）；区别在于它们返回的 tool-result 是压缩过的，所以每次委派都缩小主上下文。
 
-## When to use cavecrew vs alternatives
+## 何时用 cavecrew vs 替代方案
 
-| Task | Use |
+| 任务 | 用 |
 |---|---|
-| "Where is X defined / what calls Y / list uses of Z" | `cavecrew-investigator` |
-| Same but you also want suggestions/architecture commentary | `Explore` (vanilla) |
-| Surgical edit, ≤2 files, scope obvious | `cavecrew-builder` |
-| New feature / 3+ files / cross-cutting refactor | Main thread or `feature-dev:code-architect` |
-| Review diff, branch, or file for bugs | `cavecrew-reviewer` |
-| Deep code review with rationale + alternatives | `Code Reviewer` (vanilla) |
-| One-line answer you already know | Main thread, no subagent |
+| "X 在哪定义 / 什么调用 Y / 列出 Z 的所有用法" | `cavecrew-investigator` |
+| 同上但你还想要建议/架构点评 | `Explore`（原版） |
+| 外科手术式编辑，≤2 文件，范围清晰 | `cavecrew-builder` |
+| 新功能 / 3+ 文件 / 跨文件重构 | 主线程或 `feature-dev:code-architect` |
+| 审查 diff、分支或文件找 bug | `cavecrew-reviewer` |
+| 需要理据 + 备选方案的深度代码审查 | `Code Reviewer`（原版） |
+| 你已经知道的一行答案 | 主线程，不委派 |
 
-Rule of thumb: **if you'd want the subagent's output in 1/3 the tokens, pick cavecrew. If you'd want prose, pick vanilla.**
+经验法则：**如果你希望子代理输出只用 1/3 的 token，选 cavecrew。如果你需要散文，选原版。**
 
-## Why this exists (the real win)
+## 为什么存在（真正的收益）
 
-Subagent tool results get injected into main context verbatim. A vanilla `Explore` that returns 2k tokens of prose costs 2k tokens of main-context budget every time. The same finding from `cavecrew-investigator` returns ~700 tokens. Across 20 delegations in one session that's the difference between context exhaustion and finishing the task.
+子代理的 tool result 会被逐字注入主上下文。原版 `Explore` 返回 2k token 散文，每次都消耗 2k token 的主上下文预算。同样的发现从 `cavecrew-investigator` 返回约 700 token。一次会话 20 次委派下来，这就是上下文耗尽和完成任务之间的差别。
 
-## Output contracts
+## 输出契约
 
-What main thread can rely on per agent:
+主线程对每个代理可依赖的输出格式：
 
 **`cavecrew-investigator`**
 ```
@@ -41,42 +42,42 @@ What main thread can rely on per agent:
 - path:line — `symbol` — short note
 totals: <counts>.
 ```
-Or `No match.` Always file-path-first, line-number-attached, backticked symbols. Safe to grep with `path:\d+`.
+或 `No match.` 始终文件路径优先、附行号、符号反引号包裹。可用 `path:\d+` grep。
 
 **`cavecrew-builder`**
 ```
 <path:line-range> — <change ≤10 words>.
 verified: <re-read OK | mismatch @ path:line>.
 ```
-Or one of: `too-big.` / `needs-confirm.` / `ambiguous.` / `regressed.` (terminal first token).
+或以下之一：`too-big.` / `needs-confirm.` / `ambiguous.` / `regressed.`（终止符为首个 token）。
 
 **`cavecrew-reviewer`**
 ```
 path:line: <emoji> <severity>: <problem>. <fix>.
 totals: N🔴 N🟡 N🔵 N❓
 ```
-Or `No issues.` Findings sorted file → line ascending.
+或 `No issues.` 发现按文件 → 行号升序排列。
 
-## Chaining patterns
+## 链式模式
 
-**Locate → fix → verify** (most common):
-1. `cavecrew-investigator` returns site list.
-2. Main thread picks 1-2 sites, hands paths to `cavecrew-builder`.
-3. `cavecrew-reviewer` audits the diff.
+**定位 → 修复 → 验证**（最常见）：
+1. `cavecrew-investigator` 返回位置列表。
+2. 主线程选 1-2 处，把路径交给 `cavecrew-builder`。
+3. `cavecrew-reviewer` 审计 diff。
 
-**Parallel scout** (when investigation is broad):
-Spawn 2-3 `cavecrew-investigator` calls in one message (different angles: defs vs callers vs tests). Aggregate in main thread.
+**并行侦察**（调查范围广时）：
+在一条消息里 spawn 2-3 个 `cavecrew-investigator` 调用（不同角度：定义 vs 调用方 vs 测试）。在主线程聚合。
 
-**Single-shot edit** (when site is already known):
-Skip investigator. Hand exact path:line to `cavecrew-builder` directly.
+**单次编辑**（位置已知时）：
+跳过 investigator。把精确的 path:line 直接交给 `cavecrew-builder`。
 
-## What NOT to do
+## 不要做的事
 
-- Don't use `cavecrew-builder` when you don't already know the file. Spawn investigator first or main thread will eat tokens passing context.
-- Don't chain `cavecrew-investigator → cavecrew-builder` for a 5-file refactor. Builder will return `too-big.` and you'll have wasted a turn.
-- Don't ask `cavecrew-reviewer` for "general feedback" — it returns findings only, no architecture opinions. Use `Code Reviewer` for that.
-- Don't expect prose. Cavecrew output is structured, sometimes terse to the point of cryptic. If a human will read it directly, paraphrase.
+- 不知文件时不要用 `cavecrew-builder`。先 spawn investigator，否则主线程为了传递上下文会吃 token。
+- 5 文件重构不要链式 `cavecrew-investigator → cavecrew-builder`。Builder 会返回 `too-big.`，你浪费一回合。
+- 不要让 `cavecrew-reviewer` 给"总体反馈"——它只返回发现，不给架构意见。那要用 `Code Reviewer`。
+- 不要期待散文。Cavecrew 输出是结构化的，有时简短到隐晦。如果人类要直接读，转述一下。
 
-## Auto-clarity (inherited)
+## 自动清晰化（继承）
 
-Subagents drop caveman → normal English for security warnings, irreversible-action confirmations, and any output where fragment ambiguity could be misread. Resume caveman after.
+子代理在安全警告、不可逆操作确认、以及任何片段歧义可能被误读的输出上，放弃 caveman → 改用正常英文。之后恢复 caveman。

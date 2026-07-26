@@ -1,5 +1,5 @@
 ---
-description: Compress a natural language memory file into caveman format
+description: Compress a natural language memory file into caveman format. 中文：把自然语言 memory 文件压缩成 caveman 格式
 argument-hint: "<filepath>"
 ---
 

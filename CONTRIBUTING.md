@@ -1,63 +1,63 @@
-# Contributing to caveman4cn
+# 贡献 caveman4cn
 
-This repo is a **dual-host marketplace** (`master0071`): one set of skills, shipped to two hosts — ZCode and CodeBuddy. All skills live in `skills/` (source of truth) and are mirrored into both plugin distributions.
+本仓库是一个**双宿主市场**（`master0071`）：一套技能，交付给两个宿主——ZCode 和 CodeBuddy。所有技能位于 `skills/`（权威源），并镜像到两个插件发行版。
 
-## Quick orientation
+## 快速定位
 
-| Change | File |
+| 改什么 | 文件 |
 |--------|------|
-| Caveman behavior | `skills/caveman/SKILL.md` |
-| Commit message format | `skills/caveman-commit/SKILL.md` |
-| Code review format | `skills/caveman-review/SKILL.md` |
-| Compress logic | `skills/caveman-compress/SKILL.md` |
-| Quick reference card | `skills/caveman-help/SKILL.md` |
-| Token stats | `skills/caveman-stats/SKILL.md` |
-| Cavecrew decision guide | `skills/cavecrew/SKILL.md` |
-| ZCode installer | `scripts/install-zcode.js` |
-| CodeBuddy installer | `scripts/install-codebuddy.js` |
+| Caveman 行为 | `skills/caveman/SKILL.md` |
+| Commit message 格式 | `skills/caveman-commit/SKILL.md` |
+| 代码审查格式 | `skills/caveman-review/SKILL.md` |
+| 压缩逻辑 | `skills/caveman-compress/SKILL.md` |
+| 速查卡 | `skills/caveman-help/SKILL.md` |
+| Token 统计 | `skills/caveman-stats/SKILL.md` |
+| Cavecrew 决策指南 | `skills/cavecrew/SKILL.md` |
+| ZCode 安装器 | `scripts/install-zcode.js` |
+| CodeBuddy 安装器 | `scripts/install-codebuddy.js` |
 
-## Build
+## 构建
 
-Edit `skills/<name>/SKILL.md`, then mirror to **both** plugin distributions:
+编辑 `skills/<name>/SKILL.md`，然后镜像到**两个**插件发行版：
 
 1. `plugins/caveman-zcode/skills/<name>/SKILL.md` (ZCode)
 2. `plugins/caveman-codebuddy/skills/<name>/SKILL.md` (CodeBuddy)
 
-### Mirror rules
+### 镜像规则
 
-- **5 of 7 skills are byte-identical across `skills/`, `plugins/caveman-zcode/skills/`, and `plugins/caveman-codebuddy/skills/`**: caveman, caveman-commit, caveman-compress, caveman-review, cavecrew. Edit once, copy to both.
-- **`caveman-help`** diverges per host: the docs URL in the body points to the host-specific repo (`caveman-zcode` vs `caveman-codebuddy`). Mirror the body but keep the URL correct per host.
-- **`caveman-stats`** diverges per host: the body points at host-specific hook paths and transcript locations (`~/.zcode/cli/agents/` vs `~/.codebuddy/projects/`). Mirror the structure but keep the paths correct per host.
+- **7 个技能中有 5 个在 `skills/`、`plugins/caveman-zcode/skills/`、`plugins/caveman-codebuddy/skills/` 三处字节一致**：caveman、caveman-commit、caveman-compress、caveman-review、cavecrew。改一次，复制到两处。
+- **`caveman-help`** 各宿主不同：正文里的文档 URL 指向各自仓库（`caveman-zcode` vs `caveman-codebuddy`）。镜像正文但保留各自正确的 URL。
+- **`caveman-stats`** 各宿主不同：正文指向各自的 hook 路径和会话记录位置（`~/.zcode/cli/agents/` vs `~/.codebuddy/projects/`）。镜像结构但保留各自正确的路径。
 
 ### Hooks
 
-Hook scripts are **host-specific** (different env vars, event schemas, command-vs-process type). They are not shared — edit the copy under the relevant `plugins/<host>/hooks/`:
+Hook 脚本是**宿主专属**的（不同的环境变量、事件 schema、command vs process 类型）。它们不共享——编辑对应 `plugins/<host>/hooks/` 下的副本：
 
-- ZCode: `plugins/caveman-zcode/hooks/*.js` (uses `${ZCODE_PLUGIN_ROOT}`, `type: "process"`, `timeoutMs`)
-- CodeBuddy: `plugins/caveman-codebuddy/hooks/*.js` (uses `${CODEBUDDY_PLUGIN_ROOT}`, `type: "command"`, `timeout` in seconds)
+- ZCode: `plugins/caveman-zcode/hooks/*.js`（用 `${ZCODE_PLUGIN_ROOT}`、`type: "process"`、`timeoutMs`）
+- CodeBuddy: `plugins/caveman-codebuddy/hooks/*.js`（用 `${CODEBUDDY_PLUGIN_ROOT}`、`type: "command"`、`timeout` 以秒为单位）
 
-When porting a hook from one host to the other, adapt the schema fields — do not copy verbatim.
+从一个宿主移植 hook 到另一个时，适配 schema 字段——不要逐字复制。
 
-### Commands and agents
+### Commands 和 agents
 
-Commands (`plugins/<host>/commands/*.md`) and agents (`plugins/<host>/agents/*.md`) are host-specific frontmatter. Keep the two hosts in sync on content, but respect each host's frontmatter conventions.
+Commands（`plugins/<host>/commands/*.md`）和 agents（`plugins/<host>/agents/*.md`）是宿主专属的 frontmatter。内容上保持两个宿主同步，但尊重各自的 frontmatter 约定。
 
-## Code style
+## 代码风格
 
-- Hooks must silent-fail (pass through) on filesystem errors — never trap the user. Exception: `pre-tool-use.js` fails **closed** (deny) on any error, since a broken safety guard is worse than a false block.
-- Symlink-safe flag writes.
-- Edit `skills/` sources, not `plugins/*/skills/` copies.
+- Hooks 在文件系统错误时必须静默失败（pass through）——绝不困住用户。例外：`pre-tool-use.js` 在任何错误时**失败关闭**（deny），因为坏掉的安全防护比误拦截更糟。
+- 符号链接安全的 flag 写入。
+- 编辑 `skills/` 源，不编辑 `plugins/*/skills/` 副本。
 
-## Verifying changes
+## 验证改动
 
 ```bash
-# Syntax-check all hook scripts
+# 语法检查所有 hook 脚本
 node -c plugins/caveman-codebuddy/hooks/*.js
 node -c plugins/caveman-zcode/hooks/*.js
 
-# Validate JSON configs
+# 校验 JSON 配置
 node -e "['.codebuddy-plugin/marketplace.json','marketplace.json','plugins/caveman-codebuddy/.codebuddy-plugin/plugin.json','plugins/caveman-zcode/.zcode-plugin/plugin.json','plugins/caveman-codebuddy/hooks/hooks.json','plugins/caveman-zcode/hooks/hooks.json'].forEach(f=>JSON.parse(require('fs').readFileSync(f,'utf8'))); console.log('all JSON valid')"
 
-# Simulate a hook
+# 模拟一个 hook
 echo '{"hook_event_name":"UserPromptSubmit","prompt":"/caveman-stats"}' | node plugins/caveman-codebuddy/hooks/caveman-mode-tracker.js
 ```

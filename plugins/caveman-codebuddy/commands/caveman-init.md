@@ -1,5 +1,5 @@
 ---
-description: Drop the always-on caveman activation rule into this repo's AGENTS.md
+description: Drop the always-on caveman activation rule into this repo's AGENTS.md. 中文：把常驻 caveman 激活规则写入本仓库的 AGENTS.md
 argument-hint: "[--dry-run|--force]"
 ---
 

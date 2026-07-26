@@ -1,5 +1,5 @@
 ---
-description: Switch caveman intensity level (lite/full/ultra/wenyan)
+description: Switch caveman intensity level (lite/full/ultra/wenyan). 中文：切换 caveman 压缩级别（lite/full/ultra/wenyan）
 argument-hint: "[lite|full|ultra|wenyan]"
 ---
 

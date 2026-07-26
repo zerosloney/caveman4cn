@@ -5,22 +5,13 @@ description: >
   Reads directly from the CodeBuddy session logs — no AI estimation.
   Triggers on /caveman-stats. Output is produced by the mode-tracker hook;
   the model itself does not compute the numbers.
+  中文触发：用户说"token 统计""省了多少""会话用量"，或调用 /caveman-stats 时触发。
 ---
 
-This skill is delivered by the `UserPromptSubmit` hook
-`hooks/caveman-mode-tracker.js`, which uses `hooks/caveman-stats.js` to read
-CodeBuddy session transcripts from
-`~/.codebuddy/projects/<project>/<uuid>.jsonl`.
+本技能由 `UserPromptSubmit` hook `hooks/caveman-mode-tracker.js` 提供，它用 `hooks/caveman-stats.js` 从 `~/.codebuddy/projects/<project>/<uuid>.jsonl` 读取 CodeBuddy 会话记录。
 
-When the prompt is `/caveman-stats` (optionally `--lifetime`, `--all`, or `--share`),
-the hook returns `continue: false` with the formatted stats as the `reason`, so
-the host prints the numbers and the model never runs. Flags:
-- `--lifetime` / `--all` — union every project's transcripts, not just the newest.
-- `--share` — one-line summary (`⛏ Session: N tokens saved (~X%) via caveman mode`).
+当 prompt 为 `/caveman-stats`（可选 `--lifetime`、`--all`、`--share`）时，hook 返回 `continue: false` 并把格式化后的统计作为 `reason`，所以宿主打印数字，模型不运行。Flags：
+- `--lifetime` / `--all` —— 合并每个 project 的记录，不只是最新的。
+- `--share` —— 一行摘要（`⛏ Session: N tokens saved (~X%) via caveman mode`）。
 
-Input/output/cache figures come straight from the transcript `usage` records;
-only the `Baseline` line is estimated (output × 2.86, the caveman compression
-factor). CodeBuddy's transcript record schema is not publicly documented, so
-usage extraction is defensive — it matches the common `payload.usage` shape and
-falls back to any record carrying a top-level `usage` object. If no usage
-records are found, the hook reports "No session log found yet."
+Input/output/cache 数字直接取自会话记录的 `usage` 记录；只有 `Baseline` 行是估算的（output × 2.86，即 caveman 压缩系数）。CodeBuddy 的会话记录 schema 未公开，所以 usage 提取是防御性的——它匹配常见的 `payload.usage` 形状，并回退到任何带顶层 `usage` 对象的记录。如果找不到 usage 记录，hook 报告 "No session log found yet."。

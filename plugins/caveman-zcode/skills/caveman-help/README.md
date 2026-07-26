@@ -1,20 +1,20 @@
 # caveman-help
 
-Quick-reference card. One shot, no mode change.
+速查卡。一次性，不切换模式。
 
-## What it does
+## 它做什么
 
-Prints a cheat sheet of all caveman modes, sibling skills, deactivation triggers, and how to set the default mode via env var or config file. One-shot display — does not flip the active mode, write flag files, or persist anything. Use when you forget the slash commands.
+打印一张 cheat sheet，涵盖所有 caveman 模式、兄弟技能、停用触发、以及如何通过环境变量或配置文件设置默认模式。一次性显示——不切换活动模式、不写 flag 文件、不持久化任何东西。忘了 slash 命令时使用。
 
-## How to invoke
+## 如何调用
 
 ```
 /caveman-help
 ```
 
-Also triggers on "caveman help", "what caveman commands", "how do I use caveman".
+也会在 "caveman help"、"what caveman commands"、"how do I use caveman" 时触发。
 
-## Example output
+## 示例输出
 
 ```
 Modes:
@@ -32,7 +32,11 @@ Deactivate:
   "stop caveman" or "normal mode"
 ```
 
-## See also
+## 一次性命令后恢复
 
-- [`SKILL.md`](./SKILL.md) — full reference card
-- [Caveman README](../../README.md) — repo overview
+`/caveman-commit`、`/caveman-review`、`/caveman-compress` 是一次性命令——它们临时切换到各自的工作模式，完成后**自动恢复你之前的散文模式**（如 full/ultra）。无需手动切回，状态暂存在 `~/.caveman-active.prev`，下一个普通提问即恢复。
+
+## 另见
+
+- [`SKILL.md`](./SKILL.md) —— 完整参考卡
+- [Caveman README](../../README.md) —— 仓库总览

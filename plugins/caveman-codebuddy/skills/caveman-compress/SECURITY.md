@@ -1,31 +1,31 @@
-# Security
+# 安全
 
-## Snyk High Risk Rating
+## Snyk 高风险评级
 
-`caveman-compress` receives a Snyk High Risk rating due to static analysis heuristics. This document explains what the skill does and does not do.
+`caveman-compress` 因静态分析启发式规则获得 Snyk 高风险评级。本文档说明该技能做与不做什么。
 
-### What triggers the rating
+### 什么触发了评级
 
-1. **subprocess usage**: The skill calls the `claude` CLI via `subprocess.run()` as a fallback when `ANTHROPIC_API_KEY` is not set. The subprocess call uses a fixed argument list — no shell interpolation occurs. User file content is passed via stdin, not as a shell argument.
+1. **子进程使用**：未设置 `ANTHROPIC_API_KEY` 时，技能通过 `subprocess.run()` 调用 `claude` CLI 作为兜底。子进程调用使用固定参数列表——无 shell 插值。用户文件内容通过 stdin 传递，不作为 shell 参数。
 
-2. **File read/write**: The skill reads the file the user explicitly points it at, compresses it, and writes the result back to the same path. A `.original.md` backup is saved alongside it. No files outside the user-specified path are read or written.
+2. **文件读写**：技能读取用户明确指定的文件，压缩后写回同一路径。旁边保存一份 `.original.md` 备份。不读写用户指定路径之外的任何文件。
 
-### What the skill does NOT do
+### 该技能不做的事
 
-- Does not execute user file content as code
-- Does not make network requests except to Anthropic's API (via SDK or CLI)
-- Does not access files outside the path the user provides
-- Does not use shell=True or string interpolation in subprocess calls
-- Does not collect or transmit any data beyond the file being compressed
+- 不把用户文件内容当代码执行
+- 除调用 Anthropic API（通过 SDK 或 CLI）外不发任何网络请求
+- 不访问用户提供的路径之外的文件
+- 子进程调用中不使用 shell=True 或字符串插值
+- 不收集或传输被压缩文件之外的任何数据
 
-### Auth behavior
+### 认证行为
 
-If `ANTHROPIC_API_KEY` is set, the skill uses the Anthropic Python SDK directly (no subprocess). If not set, it falls back to the `claude` CLI, which uses the user's existing Claude desktop authentication.
+设置了 `ANTHROPIC_API_KEY` 时，技能直接使用 Anthropic Python SDK（无子进程）。未设置时，回退到 `claude` CLI，使用用户既有的 Claude 桌面端认证。
 
-### File size limit
+### 文件大小限制
 
-Files larger than 500KB are rejected before any API call is made.
+超过 500KB 的文件在任何 API 调用前被拒绝。
 
-### Reporting a vulnerability
+### 报告漏洞
 
-If you believe you've found a genuine security issue, please open a GitHub issue with the label `security`.
+如果你认为发现了真实的安全问题，请开一个带 `security` 标签的 GitHub issue。

@@ -1,5 +1,5 @@
 ---
-description: Compress a natural language memory file (CLAUDE.md, todos, preferences) into caveman format
+description: Compress a natural language memory file (CLAUDE.md, todos, preferences) into caveman format. 中文：把自然语言 memory 文件（CLAUDE.md、todos、preferences）压缩成 caveman 格式
 argument-hint: "<filepath>"
 ---
 

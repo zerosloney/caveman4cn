@@ -5,57 +5,57 @@
 <h1 align="center">caveman-compress</h1>
 
 <p align="center">
-  <strong>shrink memory file. save token every session.</strong>
+  <strong>压缩 memory 文件。每个会话都省 token。</strong>
 </p>
 
 ---
 
-A Claude Code skill that compresses your project memory files (`CLAUDE.md`, todos, preferences) into caveman format — so every session loads fewer tokens automatically.
+一个 Claude Code 技能，把项目 memory 文件（`CLAUDE.md`、todos、preferences）压缩成 caveman 格式——让每个会话自动加载更少的 token。
 
-Claude read `CLAUDE.md` on every session start. If file big, cost big. Caveman make file small. Cost go down forever.
+Claude 每次会话启动时读 `CLAUDE.md`。文件大，成本就大。Caveman 把文件变小。成本永久下降。
 
-## What It Do
+## 它做什么
 
 ```
 /caveman-compress CLAUDE.md
 ```
 
 ```
-CLAUDE.md          ← compressed (Claude reads this — fewer tokens every session)
-CLAUDE.original.md ← human-readable backup (you edit this)
+CLAUDE.md          ← 压缩版（Claude 读这个——每个会话更少 token）
+CLAUDE.original.md ← 人类可读备份（你编辑这个）
 ```
 
-Original never lost. You can read and edit `.original.md`. Run skill again to re-compress after edits.
+原文件永不丢失。你可以读和编辑 `.original.md`。编辑后再次运行技能重新压缩。
 
-## Benchmarks
+## 基准测试
 
-Real results on real project files:
+真实项目文件上的真实结果：
 
-| File | Original | Compressed | Saved |
+| 文件 | 原始 | 压缩后 | 节省 |
 |------|----------:|----------:|------:|
 | `claude-md-preferences.md` | 706 | 285 | **59.6%** |
 | `project-notes.md` | 1145 | 535 | **53.3%** |
 | `claude-md-project.md` | 1122 | 636 | **43.3%** |
 | `todo-list.md` | 627 | 388 | **38.1%** |
 | `mixed-with-code.md` | 888 | 560 | **36.9%** |
-| **Average** | **898** | **481** | **46%** |
+| **平均** | **898** | **481** | **46%** |
 
-All validations passed ✅ — headings, code blocks, URLs, file paths preserved exactly.
+所有校验通过 ✅ —— 标题、代码块、URL、文件路径逐字保留。
 
-## Before / After
+## 压缩前 / 压缩后
 
 <table>
 <tr>
 <td width="50%">
 
-### 📄 Original (706 tokens)
+### 📄 原始（706 tokens）
 
 > "I strongly prefer TypeScript with strict mode enabled for all new code. Please don't use `any` type unless there's genuinely no way around it, and if you do, leave a comment explaining the reasoning. I find that taking the time to properly type things catches a lot of bugs before they ever make it to runtime."
 
 </td>
 <td width="50%">
 
-### <img src="../../docs/assets/dancing-rock.svg" width="20" height="20" alt="rock"/> Caveman (285 tokens)
+### <img src="../../docs/assets/dancing-rock.svg" width="20" height="20" alt="rock"/> Caveman（285 tokens）
 
 > "Prefer TypeScript strict mode always. No `any` unless unavoidable — comment why if used. Proper types catch bugs early."
 
@@ -63,101 +63,101 @@ All validations passed ✅ — headings, code blocks, URLs, file paths preserved
 </tr>
 </table>
 
-**Same instructions. 60% fewer tokens. Every. Single. Session.**
+**同样的指令。少 60% token。每。一。次。会话。**
 
-## Security
+## 安全
 
-`caveman-compress` is flagged as Snyk High Risk due to subprocess and file I/O patterns detected by static analysis. This is a false positive — see [SECURITY.md](./SECURITY.md) for a full explanation of what the skill does and does not do.
+`caveman-compress` 因静态分析检测到的子进程和文件 I/O 模式被 Snyk 标为高风险。这是误报——见 [SECURITY.md](./SECURITY.md) 对该技能做与不做什么的完整说明。
 
-## Install
+## 安装
 
-Compress is built in with the `caveman` plugin. Install `caveman` once, then use `/caveman-compress`.
+compress 内置于 `caveman` 插件。安装一次 `caveman`，然后用 `/caveman-compress`。
 
-If you need local files, the compress skill lives at:
+如果需要本地文件，compress 技能位于：
 
 ```bash
 caveman-compress/
 ```
 
-**Requires:** Python 3.10+
+**要求：** Python 3.10+
 
-## Usage
+## 用法
 
 ```
 /caveman-compress <filepath>
 ```
 
-Examples:
+示例：
 ```
 /caveman-compress CLAUDE.md
 /caveman-compress docs/preferences.md
 /caveman-compress todos.md
 ```
 
-### What files work
+### 哪些文件可用
 
-| Type | Compress? |
+| 类型 | 压缩？ |
 |------|-----------|
-| `.md`, `.txt`, `.rst`, `.typ`, `.typst`, `.tex` | ✅ Yes |
-| Extensionless natural language | ✅ Yes |
-| `.py`, `.js`, `.ts`, `.json`, `.yaml` | ❌ Skip (code/config) |
-| `*.original.md` | ❌ Skip (backup files) |
+| `.md`, `.txt`, `.rst`, `.typ`, `.typst`, `.tex` | ✅ 是 |
+| 无扩展名的自然语言 | ✅ 是 |
+| `.py`, `.js`, `.ts`, `.json`, `.yaml` | ❌ 跳过（代码/配置） |
+| `*.original.md` | ❌ 跳过（备份文件） |
 
-## How It Work
+## 工作原理
 
 ```
 /caveman-compress CLAUDE.md
         ↓
-detect file type        (no tokens)
+检测文件类型        （不耗 token）
         ↓
-Claude compresses       (tokens — one call)
+Claude 压缩       （耗 token——一次调用）
         ↓
-validate output         (no tokens)
-  checks: headings, code blocks, URLs, file paths, bullets
+校验输出         （不耗 token）
+  检查：标题、代码块、URL、文件路径、列表项
         ↓
-if errors: Claude fixes cherry-picked issues only   (tokens — targeted fix)
-  does NOT recompress — only patches broken parts
+出错时：Claude 仅定点修复    （耗 token——针对性修复）
+  不重新压缩——只修补损坏部分
         ↓
-retry up to 2 times
+最多重试 2 次
         ↓
-write compressed → CLAUDE.md
-write original   → CLAUDE.original.md
+写压缩版 → CLAUDE.md
+写原始版 → CLAUDE.original.md
 ```
 
-Only two things use tokens: initial compression + targeted fix if validation fails. Everything else is local Python.
+只有两件事耗 token：初始压缩 + 校验失败时的针对性修复。其余全是本地 Python。
 
-## What Is Preserved
+## 保留了什么
 
-Caveman compress natural language. It never touch:
+Caveman 只压缩自然语言。绝不触碰：
 
-- Code blocks (` ``` ` fenced or indented)
-- Inline code (`` `backtick content` ``)
-- URLs and links
-- File paths (`/src/components/...`)
-- Commands (`npm install`, `git commit`)
-- Technical terms, library names, API names
-- Headings (exact text preserved)
-- Tables (structure preserved, cell text compressed)
-- Dates, version numbers, numeric values
+- 代码块（` ``` ` fenced 或缩进）
+- 行内代码（`` `backtick content` ``）
+- URL 和链接
+- 文件路径（`/src/components/...`）
+- 命令（`npm install`, `git commit`）
+- 技术术语、库名、API 名
+- 标题（精确文本保留）
+- 表格（结构保留，单元格文本压缩）
+- 日期、版本号、数值
 
-## Why This Matter
+## 为什么这重要
 
-`CLAUDE.md` loads on **every session start**. A 1000-token project memory file costs tokens every single time you open a project. Over 100 sessions that's 100,000 tokens of overhead — just for context you already wrote.
+`CLAUDE.md` 在**每次会话启动**时加载。一个 1000-token 的项目 memory 文件，每次打开项目都消耗这么多 token。100 次会话就是 100,000 token 的开销——全是你已经写过的上下文。
 
-Caveman cut that by ~46% on average. Same instructions. Same accuracy. Less waste.
+Caveman 平均削减约 46%。同样的指令。同样的准确度。更少的浪费。
 
 ```
 ┌────────────────────────────────────────────┐
-│  TOKEN SAVINGS PER FILE    █████       46% │
-│  SESSIONS THAT BENEFIT     ██████████ 100% │
-│  INFORMATION PRESERVED     ██████████ 100% │
-│  SETUP TIME                █            1x │
+│  每文件 TOKEN 节省       █████       46% │
+│  受益会话数             ██████████ 100% │
+│  信息保留度             ██████████ 100% │
+│  配置时间               █            1x │
 └────────────────────────────────────────────┘
 ```
 
-## Part of Caveman
+## Caveman 的一部分
 
-This skill is part of the [caveman](https://github.com/JuliusBrussee/caveman) toolkit — making Claude use fewer tokens without losing accuracy.
+本技能是 [caveman](https://github.com/JuliusBrussee/caveman) 工具包的一部分——让 Claude 用更少 token 而不失准确度。
 
-- **caveman** — make Claude *speak* like caveman (cuts response tokens ~65%)
-- **caveman-compress** — make Claude *read* less (cuts context tokens ~46%)
+- **caveman** —— 让 Claude *说话*像 caveman（削减约 65% 回复 token）
+- **caveman-compress** —— 让 Claude *读*得更少（削减约 46% 上下文 token）
