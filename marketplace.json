@@ -1,6 +1,6 @@
 {
   "name": "master0071",
-  "description": "Caveman plugin marketplace (zcode + codebuddy) — ultra-compressed communication mode. Add this repo in codebuddy to get caveman-codebuddy, or in zcode to get caveman-zcode.",
+  "description": "Caveman plugin marketplace (zcode + codebuddy + qwen) — ultra-compressed communication mode. Add this repo in codebuddy to get caveman-codebuddy, in zcode to get caveman-zcode, or install via scripts/install-qwen.js for Qwen Code.",
   "owner": {
     "name": "master0071",
     "email": "master0071@users.noreply.github.com"
@@ -33,6 +33,20 @@
       "homepage": "https://github.com/zerosloney/caveman4cn",
       "license": "MIT",
       "keywords": ["productivity", "communication", "brevity", "zcode"]
+    },
+    {
+      "name": "caveman-qwen",
+      "description": "Ultra-compressed communication mode for Qwen Code. Cut filler. Keep technical accuracy. Supports lite, full, ultra, wenyan intensity levels.",
+      "version": "0.1.0",
+      "source": "./plugins/caveman-qwen",
+      "category": "productivity",
+      "author": {
+        "name": "zerosloney",
+        "url": "https://github.com/zerosloney/caveman4cn"
+      },
+      "homepage": "https://github.com/zerosloney/caveman4cn",
+      "license": "MIT",
+      "keywords": ["productivity", "communication", "brevity", "qwen", "qwen-code"]
     }
   ]
 }

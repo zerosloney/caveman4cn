@@ -1,45 +1,50 @@
 # Caveman Marketplace (master0071) 🪨
 
-**一个仓库，三个宿主插件。** 词多何用，少即是好。
+**一个仓库，四个宿主插件。** 词多何用，少即是好。
 
 让代理像原始人一样说话。同样的答案，**输出 token 减少 65%**。脑子照旧，嘴巴变小。
 
 ## 这是什么
 
-本仓库是名为 **`master0071`** 的统一插件市场，同时为三个宿主提供 Caveman 插件：
+本仓库是名为 **`master0071`** 的统一插件市场，同时为四个宿主提供 Caveman 插件：
 
 - **ZCode** 加载本仓库 → 获得 `caveman-zcode`
 - **CodeBuddy** 加载本仓库 → 获得 `caveman-codebuddy`
 - **Trae IDE** 运行 `install-trae.js` → 获得 `caveman-trae`
+- **Qwen Code** 运行 `install-qwen.js` → 获得 `caveman-qwen`
 
-三个宿主各按自己的约定发现资产，互不干扰：
+四个宿主各按自己的约定发现资产，互不干扰：
 
 | 宿主 | 发现机制 | 加载的插件 |
 |------|---------|-----------|
 | ZCode | 仓库根 `marketplace.json` + `plugins/caveman-zcode/.zcode-plugin/plugin.json` | `caveman-zcode` |
 | CodeBuddy | `.codebuddy-plugin/marketplace.json` + `plugins/caveman-codebuddy/.codebuddy-plugin/plugin.json` | `caveman-codebuddy` |
 | Trae IDE | 安装器铺资产到 `~/.trae-cn/`（无市场清单概念） | `caveman-trae` |
+| Qwen Code | 安装器铺扩展到 `~/.qwen/extensions/caveman-qwen/` + 合并 `~/.qwen/settings.json` | `caveman-qwen` |
 
-ZCode 与 CodeBuddy 靠各自清单目录约定区分；Trae 没有 marketplace/plugin.json 概念，由安装器把 skills/commands/hooks/rules 铺到 `~/.trae-cn/` 全局约定位置。
+ZCode 与 CodeBuddy 靠各自清单目录约定区分；Trae 没有 marketplace/plugin.json 概念，由安装器把 skills/commands/hooks/rules 铺到 `~/.trae-cn/` 全局约定位置；Qwen Code 由安装器把扩展铺到 `~/.qwen/extensions/caveman-qwen/`，并把钩子与状态行合并进 `~/.qwen/settings.json`。
 
 ## 目录结构
 
 ```
 caveman4cn/
-├── marketplace.json                     # ZCode 根清单 → caveman-zcode
+├── marketplace.json                     # ZCode 根清单 → caveman-zcode + caveman-qwen
 ├── .codebuddy-plugin/marketplace.json   # CodeBuddy 清单 → caveman-codebuddy
 ├── plugins/
 │   ├── caveman-zcode/                   # ZCode 插件（Node hooks）
 │   │   └── .zcode-plugin/plugin.json
 │   ├── caveman-codebuddy/               # CodeBuddy 插件（Node hooks）
 │   │   └── .codebuddy-plugin/plugin.json
-│   └── caveman-trae/                    # Trae 插件（文档清单 + 安装器铺放资产）
-│       └── .trae-plugin/plugin.json     # 仅作文档；Trae 不扫描
+│   ├── caveman-trae/                    # Trae 插件（文档清单 + 安装器铺放资产）
+│   │   └── .trae-plugin/plugin.json     # 仅作文档；Trae 不扫描
+│   └── caveman-qwen/                    # Qwen Code 扩展（Node hooks + statusline）
+│       └── .qwen-extension/plugin.json  # qwen-extension.json 清单
 ├── skills/                              # 共享技能源（真理之源）
 ├── scripts/
 │   ├── install-zcode.js                 # 安装到 ZCode
 │   ├── install-codebuddy.js             # 安装到 CodeBuddy
-│   └── install-trae.js                  # 安装到 Trae（铺到 ~/.trae-cn/）
+│   ├── install-trae.js                  # 安装到 Trae（铺到 ~/.trae-cn/）
+│   └── install-qwen.js                  # 安装到 Qwen Code（铺到 ~/.qwen/extensions/）
 └── package.json                         # @master0071/caveman4cn
 ```
 
@@ -91,13 +96,28 @@ Trae 没有 marketplace 概念——安装器把资产直接铺到 `~/.trae-cn/`
 
 安装后重启 Trae IDE。
 
+### Qwen Code
+
+```bash
+node scripts/install-qwen.js             # 安装
+node scripts/install-qwen.js --dry-run   # 预览
+node scripts/install-qwen.js --uninstall # 卸载
+```
+
+Qwen Code 的扩展约定：安装器把扩展铺到 `~/.qwen/extensions/caveman-qwen/`，并把钩子与状态行合并进 `~/.qwen/settings.json`：
+- 扩展文件 → `~/.qwen/extensions/caveman-qwen/{skills,commands,agents,hooks,scripts,tools}/`
+- 清单 → `~/.qwen/extensions/caveman-qwen/.qwen-extension/plugin.json`（`qwen-extension.json` 约定）
+- `~/.qwen/settings.json` 合并 5 个事件钩子（SessionStart/UserPromptSubmit/PreToolUse/PostToolUse/Stop）+ `ui.statusLine`（自动配置，已存在则不覆盖）
+
+安装后重启 Qwen Code，或运行 `/extensions` 热重载。
+
 ### 一键全部安装（通过 npm）
 
 ```bash
 npx @master0071/caveman4cn
 ```
 
-`postinstall` 会依次运行两个安装器。
+`postinstall` 会依次运行四个安装器。
 
 ## 使用
 
@@ -108,9 +128,9 @@ npx @master0071/caveman4cn
 - `/caveman-commit` — 传统提交信息，≤50 字主题
 - `/caveman-review` — 一行式 PR 评论
 - `/caveman-compress <file>` — 压缩记忆文件，永久节省输入 token
-- `/caveman-init` — 写入 per-repo AGENTS.md 规则，CodeBuddy 每次会话自动加载 caveman
+- `/caveman-init` — 写入 per-repo AGENTS.md 规则，每次会话自动加载 caveman
 - `/caveman-stats` — 查看 token 节省统计
-- `/caveman-statusline` — 查看/配置 CodeBuddy 状态行
+- `/caveman-statusline` — 查看/配置状态行（CodeBuddy / Qwen Code）
 - `/caveman-help` — 快速参考卡
 - `stop caveman` / `normal mode` — 关闭原始人模式
 
@@ -123,9 +143,9 @@ npx @master0071/caveman4cn
 | `ultra` | 极限压缩，每句话只出现一次事实 |
 | `wenyan` | 文言文输出，最大压缩比 |
 
-## 状态行配置（CodeBuddy Code）
+## 状态行配置（CodeBuddy Code / Qwen Code）
 
-Caveman 插件支持在 CodeBuddy Code 界面底部显示状态行，实时显示当前压缩模式和 token 节省统计。
+Caveman 插件支持在 CodeBuddy Code 与 Qwen Code 界面底部显示状态行，实时显示当前压缩模式和 token 节省统计。Qwen Code 用户安装时已自动配置；CodeBuddy 用户参考下面的手动步骤。
 
 ### 效果预览
 
@@ -135,7 +155,7 @@ Caveman 插件支持在 CodeBuddy Code 界面底部显示状态行，实时显�
 
 从左到右：当前模式 → 项目目录 → Git 分支 → 累计节省 token。
 
-### 配置步骤
+### 配置步骤（CodeBuddy）
 
 1. 编辑 `~/.codebuddy/settings.json`（用户级）或 `.codebuddy/settings.json`（项目级）
 2. 添加 `statusLine` 配置：
@@ -151,6 +171,26 @@ Caveman 插件支持在 CodeBuddy Code 界面底部显示状态行，实时显�
 ```
 
 3. 重启 CodeBuddy 或执行 `/reload-plugins`
+
+### 配置步骤（Qwen Code）
+
+Qwen Code 用户运行 `install-qwen.js` 时已自动写入 `ui.statusLine`，无需手动配置。若要手动调整：
+
+1. 编辑 `~/.qwen/settings.json`，在 `ui` 键下添加 `statusLine`（注意：根级别的 `statusLine` 不生效，必须在 `ui` 下）：
+
+```json
+{
+  "ui": {
+    "statusLine": {
+      "type": "command",
+      "command": "node ~/.qwen/extensions/caveman-qwen/scripts/statusline.js",
+      "refreshInterval": 5
+    }
+  }
+}
+```
+
+2. 保存即热重载生效，无需重启
 
 ### 自定义
 
@@ -194,10 +234,10 @@ Caveman 插件支持在 CodeBuddy Code 界面底部显示状态行，实时显�
 
 ## 工作原理
 
-1. 安装器将 `plugins/caveman-zcode/` 或 `plugins/caveman-codebuddy/` 复制到对应宿主的插件目录；Trae 则由安装器把 `plugins/caveman-trae/` 的资产铺到 `~/.trae-cn/` 各约定位置
+1. 安装器将 `plugins/caveman-zcode/` 或 `plugins/caveman-codebuddy/` 复制到对应宿主的插件目录；Trae 则由安装器把 `plugins/caveman-trae/` 的资产铺到 `~/.trae-cn/` 各约定位置；Qwen Code 则由安装器把 `plugins/caveman-qwen/` 铺到 `~/.qwen/extensions/caveman-qwen/`
 2. 技能文件（`skills/*/SKILL.md`）告诉宿主：丢弃废话，保留实质
-3. ZCode/CodeBuddy 的插件系统注册钩子、命令和技能；Trae 的 skills/commands/rules 落到 `~/.trae-cn/` 全局目录自动加载，hooks 通过合并 `~/.trae-cn/hooks.json` 注册
-4. ZCode/CodeBuddy 只读取与自己约定相符的清单，因此只会加载对应插件；Trae 不读市场清单，资产靠约定路径发现
+3. ZCode/CodeBuddy 的插件系统注册钩子、命令和技能；Trae 的 skills/commands/rules 落到 `~/.trae-cn/` 全局目录自动加载，hooks 通过合并 `~/.trae-cn/hooks.json` 注册；Qwen Code 的 skills/commands/agents 落到扩展目录自动发现，hooks 与 statusLine 通过合并 `~/.qwen/settings.json` 注册
+4. ZCode/CodeBuddy 只读取与自己约定相符的清单，因此只会加载对应插件；Trae 与 Qwen Code 不读市场清单，资产靠约定路径发现
 
 ## 许可证
 
