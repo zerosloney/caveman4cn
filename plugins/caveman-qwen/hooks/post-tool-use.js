@@ -1,6 +1,8 @@
 #!/usr/bin/env node
 // caveman — Qwen Code PostToolUse hook
-// Tracks tool usage for caveman stats. Logs to local file for stats command.
+// Tracks tool usage by appending to ~/.caveman/tool-usage-qwen.log. This log is
+// diagnostic-only (manual inspection) — /caveman-stats reads Qwen transcripts
+// directly via caveman-stats.js, not this file. Kept for future tooling/debug.
 //
 // Qwen Code contract:
 //   - stdin: JSON { hook_event_name, tool_name, tool_response, ... }
@@ -16,7 +18,7 @@ function logStats(toolName, toolResponse) {
     const dataDir = process.env.QWEN_PLUGIN_DATA || path.join(process.env.HOME || process.env.USERPROFILE || '.', '.caveman');
     if (!fs.existsSync(dataDir)) fs.mkdirSync(dataDir, { recursive: true });
 
-    const logFile = path.join(dataDir, 'tool-usage.log');
+    const logFile = path.join(dataDir, 'tool-usage-qwen.log');
     const entry = JSON.stringify({
       ts: new Date().toISOString(),
       tool: toolName,

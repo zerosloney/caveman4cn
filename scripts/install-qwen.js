@@ -36,7 +36,7 @@ const SETTINGS_FILE = path.join(QWEN_HOME, 'settings.json');
 const SRC_DIR = path.join(__dirname, '..', 'plugins', 'caveman-qwen');
 
 const SUBDIRS = [
-  '.qwen-extension', 'skills', 'commands', 'agents',
+  'skills', 'commands', 'agents',
   'hooks', 'scripts', 'tools',
 ];
 
@@ -87,6 +87,22 @@ const HOOK_EVENTS = [
     timeout: 5000,
     name: 'caveman-stop',
     description: 'Check output quality when caveman mode is active',
+  },
+  {
+    event: 'PostToolUseFailure',
+    matcher: 'run_shell_command|write_file|edit|Bash|Write|WriteFile|Edit',
+    script: 'post-tool-use-failure.js',
+    timeout: 5000,
+    name: 'caveman-post-tool-use-failure',
+    description: 'Provide compressed recovery advice on tool failure',
+  },
+  {
+    event: 'PreCompact',
+    matcher: 'auto|manual',
+    script: 'pre-compact.js',
+    timeout: 5000,
+    name: 'caveman-pre-compact',
+    description: 'Inject caveman rules into compression guidance',
   },
 ];
 
@@ -310,6 +326,20 @@ function install(dryRun) {
     }
   }
 
+  // 复制根级 manifest 文件 qwen-extension.json
+  const manifestSrc = path.join(SRC_DIR, 'qwen-extension.json');
+  const manifestDest = path.join(EXT_DIR, 'qwen-extension.json');
+  if (fs.existsSync(manifestSrc)) {
+    if (!dryRun) {
+      fs.copyFileSync(manifestSrc, manifestDest);
+      console.log('  installed: qwen-extension.json');
+    } else {
+      console.log(`  would copy: ${manifestSrc} → ${manifestDest}`);
+    }
+  } else {
+    console.warn('  跳过 qwen-extension.json（文件不存在）');
+  }
+
   // 3. 合并 hooks + ui.statusLine 进 settings.json
   console.log(`\n→ 合并钩子与状态行到 ${SETTINGS_FILE}`);
   if (!dryRun) {
@@ -317,7 +347,7 @@ function install(dryRun) {
     mergeHooks(settings, false);
     mergeStatusLine(settings, false);
     writeSettings(settings);
-    console.log('  merged: 5 hooks (SessionStart/UserPromptSubmit/PreToolUse/PostToolUse/Stop)');
+    console.log('  merged: 7 hooks (SessionStart/UserPromptSubmit/PreToolUse/PostToolUse/PostToolUseFailure/PreCompact/Stop)');
     console.log('  merged: ui.statusLine');
   } else {
     const settings = readSettings();

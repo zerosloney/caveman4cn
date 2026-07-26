@@ -40,7 +40,7 @@ caveman4cn/
 │   ├── caveman-trae/                    # Trae 插件（文档清单 + 安装器铺放资产）
 │   │   └── .trae-plugin/plugin.json     # 仅作文档；Trae 不扫描
 │   ├── caveman-qwen/                    # Qwen Code 扩展（Node hooks + statusline）
-│   │   └── .qwen-extension/plugin.json  # qwen-extension.json 清单
+│   │   └── qwen-extension.json          # 根级扩展清单（Qwen 约定：根目录而非子目录）
 │   └── caveman-qoder/                   # Qoder 插件（Node hooks，无 statusline）
 │       └── .qoder-plugin/plugin.json    # Qoder 插件清单
 ├── skills/                              # 共享技能源（真理之源）
@@ -111,8 +111,8 @@ node scripts/install-qwen.js --uninstall # 卸载
 
 Qwen Code 的扩展约定：安装器把扩展铺到 `~/.qwen/extensions/caveman-qwen/`，并把钩子与状态行合并进 `~/.qwen/settings.json`：
 - 扩展文件 → `~/.qwen/extensions/caveman-qwen/{skills,commands,agents,hooks,scripts,tools}/`
-- 清单 → `~/.qwen/extensions/caveman-qwen/.qwen-extension/plugin.json`（`qwen-extension.json` 约定）
-- `~/.qwen/settings.json` 合并 5 个事件钩子（SessionStart/UserPromptSubmit/PreToolUse/PostToolUse/Stop）+ `ui.statusLine`（自动配置，已存在则不覆盖）
+- 清单 → `~/.qwen/extensions/caveman-qwen/qwen-extension.json`（根级扩展清单）
+- `~/.qwen/settings.json` 合并 7 个事件钩子（SessionStart/UserPromptSubmit/PreToolUse/PostToolUse/PostToolUseFailure/PreCompact/Stop）+ `ui.statusLine`（自动配置，已存在则不覆盖）
 
 安装后重启 Qwen Code，或运行 `/extensions` 热重载。
 

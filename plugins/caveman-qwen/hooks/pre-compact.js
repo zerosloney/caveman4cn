@@ -5,8 +5,9 @@
 //
 // Qwen Code contract:
 //   - stdin: JSON { hook_event_name, trigger: "auto"|"manual", ... }
-//   - stdout: JSON. Exit code 0 + additionalContext -> injected as compression guidance.
-//   - The additionalContext is added to the compression instructions, telling
+//   - stdout: JSON. Pass-through shape: { decision: "allow" }.
+//     To inject compression guidance: { decision: "allow", hookSpecificOutput: { additionalContext } }.
+//   - additionalContext is added to the compression instructions, telling
 //     the summarizer to preserve caveman mode behavior.
 
 const path = require('path');
@@ -25,7 +26,7 @@ async function main() {
     input = JSON.parse(raw);
   } catch {
     // Bad stdin — pass through, never block compression.
-    process.stdout.write(JSON.stringify({ continue: true }));
+    process.stdout.write(JSON.stringify({ decision: 'allow' }));
     return;
   }
 
@@ -33,7 +34,7 @@ async function main() {
 
   if (!activeMode) {
     // Caveman not active — nothing to preserve.
-    process.stdout.write(JSON.stringify({ continue: true }));
+    process.stdout.write(JSON.stringify({ decision: 'allow' }));
     return;
   }
 
@@ -44,7 +45,7 @@ async function main() {
   // Inject caveman mode preservation instruction into compression guidance.
   // The summarizer will see this and keep the behavior alive.
   const output = {
-    continue: true,
+    decision: 'allow',
     hookSpecificOutput: {
       hookEventName: input.hook_event_name || 'PreCompact',
       additionalContext:

@@ -165,7 +165,6 @@ function allow(reason) {
 
 function deny(reason) {
   return {
-    continue: false,
     hookSpecificOutput: {
       hookEventName: 'PreToolUse',
       permissionDecision: 'deny',

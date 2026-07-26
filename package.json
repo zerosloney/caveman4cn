@@ -34,7 +34,7 @@
     "install:trae": "node ./scripts/install-trae.js",
     "install:qwen": "node ./scripts/install-qwen.js",
     "install:qoder": "node ./scripts/install-qoder.js",
-    "postinstall": "node ./scripts/install-zcode.js && node ./scripts/install-codebuddy.js && node ./scripts/install-trae.js && node ./scripts/install-qwen.js && node ./scripts/install-qoder.js"
+    "postinstall": "node ./scripts/postinstall.js"
   },
   "files": [
     "plugins/caveman-zcode/",
@@ -47,6 +47,7 @@
     "scripts/install-trae.js",
     "scripts/install-qwen.js",
     "scripts/install-qoder.js",
+    "scripts/postinstall.js",
     "skills/",
     "marketplace.json",
     ".codebuddy-plugin/marketplace.json",
