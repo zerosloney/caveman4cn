@@ -110,6 +110,7 @@ npx @master0071/caveman4cn
 - `/caveman-compress <file>` — 压缩记忆文件，永久节省输入 token
 - `/caveman-init` — 写入 per-repo AGENTS.md 规则，CodeBuddy 每次会话自动加载 caveman
 - `/caveman-stats` — 查看 token 节省统计
+- `/caveman-statusline` — 查看/配置 CodeBuddy 状态行
 - `/caveman-help` — 快速参考卡
 - `stop caveman` / `normal mode` — 关闭原始人模式
 
@@ -121,6 +122,63 @@ npx @master0071/caveman4cn
 | `full`（默认） | 省略冠词，使用片段，短同义词 |
 | `ultra` | 极限压缩，每句话只出现一次事实 |
 | `wenyan` | 文言文输出，最大压缩比 |
+
+## 状态行配置（CodeBuddy Code）
+
+Caveman 插件支持在 CodeBuddy Code 界面底部显示状态行，实时显示当前压缩模式和 token 节省统计。
+
+### 效果预览
+
+```
+⛏ [full] 📁 my-project  🌿 main  💰 12.4k
+```
+
+从左到右：当前模式 → 项目目录 → Git 分支 → 累计节省 token。
+
+### 配置步骤
+
+1. 编辑 `~/.codebuddy/settings.json`（用户级）或 `.codebuddy/settings.json`（项目级）
+2. 添加 `statusLine` 配置：
+
+```json
+{
+  "statusLine": {
+    "type": "command",
+    "command": "node ~/.codebuddy/plugins/caveman-codebuddy/scripts/statusline.js",
+    "padding": 0
+  }
+}
+```
+
+3. 重启 CodeBuddy 或执行 `/reload-plugins`
+
+### 自定义
+
+编辑 `~/.caveman/config.json`，添加 `statusline` 节：
+
+```json
+{
+  "statusline": {
+    "showMode": true,
+    "showDir": true,
+    "showGit": true,
+    "showSavings": true,
+    "showModel": false
+  }
+}
+```
+
+| 选项 | 类型 | 默认 | 说明 |
+|------|------|------|------|
+| `showMode` | boolean | `true` | 显示模式指示器（⛏ [full]） |
+| `showDir` | boolean | `true` | 显示项目目录名（📁 my-project） |
+| `showGit` | boolean | `true` | 显示 Git 分支（🌿 main） |
+| `showSavings` | boolean | `true` | 显示累计节省 token（💰 12.4k） |
+| `showModel` | boolean | `false` | 显示当前模型名（🤖 GPT-5） |
+
+### 帮助命令
+
+执行 `/caveman-statusline` 查看当前配置状态和详细设置说明。
 
 ## 技能
 
