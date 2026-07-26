@@ -1,6 +1,10 @@
 #!/usr/bin/env node
 // caveman — ZCode SessionStart hook
 // Reads stdin JSON, activates caveman mode, injects rules context.
+//
+// ZCode hook stdout contract (diagnosing-hooks §2): output is a strict JSON
+// schema. The only recognized key here is `additionalContext`, injected into
+// the conversation. Emit `{}` (or nothing) to pass through silently.
 
 const path = require('path');
 const fs = require('fs');
@@ -33,13 +37,22 @@ async function main() {
   process.stdin.setEncoding('utf-8');
   for await (const chunk of process.stdin) raw += chunk;
 
-  const input = JSON.parse(raw);
+  let input = {};
+  try {
+    input = raw.trim() ? JSON.parse(raw) : {};
+  } catch {
+    // Malformed stdin: emit nothing, don't crash the session.
+    process.stdout.write(JSON.stringify({}));
+    return;
+  }
   const mode = getDefaultMode();
   const skillContent = resolveSkillContent();
 
   // Build context injection based on source
   let additionalContext = '';
-  if (input.source === 'startup' || input.source === 'clear') {
+  const source = input.source || '';
+  if (source === 'startup' || source === 'clear' || source === '') {
+    // Empty/absent source also activates: ZCode may not always send source.
     additionalContext = skillContent
       ? `Caveman mode active (${mode}). Rules:\n${skillContent}`
       : `Caveman mode active (${mode}). Respond terse like smart caveman — drop articles, filler, pleasantries. Fragments OK. Technical terms exact. Code unchanged.`;
@@ -56,18 +69,16 @@ async function main() {
     } catch {}
   }
 
-  const output = {
-    hookSpecificOutput: {
-      hookEventName: input.hook_event_name || 'SessionStart',
-      additionalContext,
-    },
-  };
-
   process.stderr.write(`[caveman] SessionStart: ${mode} mode\n`);
-  process.stdout.write(JSON.stringify(output));
+  // Flat schema: only `additionalContext` is recognized. Empty string would
+  // inject nothing useful, so emit `{}` when there's no context.
+  process.stdout.write(
+    JSON.stringify(additionalContext ? { additionalContext } : {})
+  );
 }
 
 main().catch((err) => {
   process.stderr.write(`[caveman] SessionStart error: ${err.message}\n`);
-  process.exit(1);
+  // Never block session start on a hook error.
+  process.stdout.write(JSON.stringify({}));
 });

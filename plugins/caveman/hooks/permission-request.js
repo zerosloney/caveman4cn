@@ -2,9 +2,12 @@
 // caveman — ZCode PermissionRequest hook
 // Auto-approves known safe write operations in caveman mode.
 // Reduces friction for the compressed communication workflow.
+//
+// ZCode hook stdout contract (diagnosing-hooks §2): strict JSON schema.
+// PermissionRequest uses exit codes like PreToolUse: exit 0 = allow,
+// exit 2 = deny, with the reason on stderr. Emit `{}` to stdout either way.
 
 const path = require('path');
-const fs = require('fs');
 
 // Known safe directories for auto-approval
 const SAFE_PATH_PREFIXES = [
@@ -44,43 +47,33 @@ async function main() {
   process.stdin.setEncoding('utf-8');
   for await (const chunk of process.stdin) raw += chunk;
 
-  const input = JSON.parse(raw);
+  let input;
+  try {
+    input = JSON.parse(raw);
+  } catch {
+    // Malformed stdin — fail open (let the default permission flow handle it).
+    process.stdout.write(JSON.stringify({}));
+    return;
+  }
   const toolName = input.tool_name || '';
   const toolInput = input.tool_input || {};
   const filePath = toolInput.file_path || toolInput.path || '';
 
   // Auto-approve safe write operations
-  if (toolName === 'Write' || toolName === 'Edit') {
-    if (isSafePath(filePath)) {
-      const output = {
-        hookSpecificOutput: {
-          hookEventName: input.hook_event_name || 'PermissionRequest',
-          decision: {
-            behavior: 'allow',
-            message: `Caveman: ${filePath} 在安全路径中，自动允许。`,
-          },
-        },
-      };
-      process.stderr.write(`[caveman] PermissionRequest: auto-allow ${filePath}\n`);
-      process.stdout.write(JSON.stringify(output));
-      return;
-    }
+  if ((toolName === 'Write' || toolName === 'Edit') && isSafePath(filePath)) {
+    process.stderr.write(`[caveman] PermissionRequest: auto-allow ${filePath}\n`);
+    process.stdout.write(JSON.stringify({}));
+    // exit 0 = allow
+    return;
   }
 
-  // For unknown paths, let the default permission flow handle it
-  const output = {
-    hookSpecificOutput: {
-      hookEventName: input.hook_event_name || 'PermissionRequest',
-      decision: {
-        behavior: 'ask',
-        message: `Caveman 需要确认是否允许写入 ${filePath || toolName}。`,
-      },
-    },
-  };
-  process.stdout.write(JSON.stringify(output));
+  // For unknown paths, let the default permission flow handle it (ask).
+  // Emit nothing and exit 0 so the host's normal confirmation prompt runs.
+  process.stdout.write(JSON.stringify({}));
 }
 
 main().catch((err) => {
   process.stderr.write(`[caveman] PermissionRequest error: ${err.message}\n`);
-  process.exit(1);
+  // Fail open — never deny on a hook error.
+  process.stdout.write(JSON.stringify({}));
 });

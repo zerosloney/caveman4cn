@@ -5,15 +5,16 @@
 //
 // Contract (matches skills/caveman-stats/SKILL.md):
 //   prompt "/caveman-stats"            -> current-session stats
-//   prompt "/caveman-stats --lifetime" -> all-session stats
+//   prompt "/caveman-stats --lifetime" -> all-session stats (--all / --since also)
 //   prompt "/caveman-stats --share"    -> one-line tweetable summary
 //   any other prompt                   -> pass through unchanged
 //
-// We never block non-stats prompts. For stats prompts we emit:
-//   { continue: false, reason: <formatted block>, ... }
-// so the host displays the reason and stops (no model call).
+// ZCode hook stdout contract (diagnosing-hooks §2): strict JSON schema.
+// To block the model and show the user a message, emit `{}` to stdout and
+// exit with code 2 — the host treats exit 2 as a block and surfaces stderr
+// (where we write the formatted stats) to the user. Empty stdout + exit 0
+// passes through unchanged.
 
-const path = require('path');
 const {
   computeStats,
   formatStats,
@@ -50,7 +51,7 @@ async function main() {
 
   const lifetime =
     /\s--(lifetime|all|since)\b/i.test(prompt) || /\s--all\b/.test(prompt);
-  const share = /\s--share\b/i.test(prompt);
+  const share = /\s--share\b/.test(prompt);
 
   const stats = computeStats({ lifetime });
   writeLifetimeBadge(stats);
@@ -68,19 +69,11 @@ async function main() {
     body = formatStats(stats);
   }
 
-  process.stderr.write(
-    `[caveman] mode-tracker: /caveman-stats (${lifetime ? 'lifetime' : 'session'})\n`
-  );
-
-  const output = {
-    continue: false,
-    reason: body,
-    hookSpecificOutput: {
-      hookEventName: input.hook_event_name || 'UserPromptSubmit',
-      additionalContext: body,
-    },
-  };
-  process.stdout.write(JSON.stringify(output));
+  // Block the model call; surface the formatted stats via stderr (host shows
+  // stderr on exit 2). Stdout stays empty so no schema key can fail validation.
+  process.stderr.write(`[caveman] /caveman-stats (${lifetime ? 'lifetime' : 'session'}):\n${body}\n`);
+  process.stdout.write(JSON.stringify({}));
+  process.exit(2);
 }
 
 main().catch((err) => {

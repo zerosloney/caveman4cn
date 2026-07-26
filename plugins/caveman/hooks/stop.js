@@ -3,16 +3,25 @@
 // Checks output quality when caveman mode is active.
 // If the model is about to end with verbose output in caveman mode,
 // blocks to allow correction. Max 3 consecutive blocks.
+//
+// ZCode hook stdout contract (diagnosing-hooks §2): strict JSON schema.
+// Stop may request continuation. The compliant way under the flat schema is
+// exit code 2 (block / request continuation) with the reason on stderr; the
+// host surfaces stderr and re-prompts the model. Exit 0 + `{}` ends the turn.
+// Note: `decision: "block"` is a deprecated Claude-Code-era field — do not use.
 
 const path = require('path');
 const fs = require('fs');
 
 const COUNTER_FILE = 'caveman-stop-counter';
 
+function dataDir() {
+  return process.env.ZCODE_PLUGIN_DATA || path.join(process.env.HOME || process.env.USERPROFILE || '.', '.caveman');
+}
+
 function getBlockCount() {
   try {
-    const dataDir = process.env.ZCODE_PLUGIN_DATA || path.join(process.env.HOME || '.', '.caveman');
-    const counterPath = path.join(dataDir, COUNTER_FILE);
+    const counterPath = path.join(dataDir(), COUNTER_FILE);
     if (fs.existsSync(counterPath)) {
       return parseInt(fs.readFileSync(counterPath, 'utf-8').trim(), 10) || 0;
     }
@@ -22,9 +31,9 @@ function getBlockCount() {
 
 function incrementBlockCount() {
   try {
-    const dataDir = process.env.ZCODE_PLUGIN_DATA || path.join(process.env.HOME || '.', '.caveman');
-    if (!fs.existsSync(dataDir)) fs.mkdirSync(dataDir, { recursive: true });
-    const counterPath = path.join(dataDir, COUNTER_FILE);
+    const dir = dataDir();
+    if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
+    const counterPath = path.join(dir, COUNTER_FILE);
     const count = getBlockCount() + 1;
     fs.writeFileSync(counterPath, String(count));
     return count;
@@ -35,8 +44,7 @@ function incrementBlockCount() {
 
 function resetBlockCount() {
   try {
-    const dataDir = process.env.ZCODE_PLUGIN_DATA || path.join(process.env.HOME || '.', '.caveman');
-    const counterPath = path.join(dataDir, COUNTER_FILE);
+    const counterPath = path.join(dataDir(), COUNTER_FILE);
     if (fs.existsSync(counterPath)) fs.unlinkSync(counterPath);
   } catch {}
 }
@@ -68,12 +76,12 @@ function checkVerbosity(message) {
 
   // If caveman mode is active, flag verbose output
   if (fillerCount > 3 && wordCount > 100) {
-    return `[caveman] 检测到 ${fillerCount} 个填充词，共 ${wordCount} 词。Caveman 模式要求精简：去掉填充词和客套话，直接给出结论。`;
+    return `[caveman] ${fillerCount} filler words across ${wordCount} words. Caveman mode requires brevity: drop filler and pleasantries, lead with the conclusion.`;
   }
 
   // Long final output in caveman mode
   if (wordCount > 300 && totalLines > 20) {
-    return `[caveman] 输出过长 (${wordCount} 词, ${totalLines} 行)。精简为要点，每行一个结论。`;
+    return `[caveman] Output too long (${wordCount} words, ${totalLines} lines). Compress to bullet points, one conclusion per line.`;
   }
 
   return null;
@@ -84,9 +92,14 @@ async function main() {
   process.stdin.setEncoding('utf-8');
   for await (const chunk of process.stdin) raw += chunk;
 
-  const input = JSON.parse(raw);
+  let input;
+  try {
+    input = JSON.parse(raw);
+  } catch {
+    process.stdout.write(JSON.stringify({}));
+    return;
+  }
   const lastMessage = input.last_assistant_message || '';
-  const stopHookActive = input.stop_hook_active || false;
 
   if (!isCavemanActive()) {
     // Caveman not active — allow through
@@ -105,16 +118,9 @@ async function main() {
       return;
     }
 
-    const output = {
-      decision: 'block',
-      reason: issue,
-      hookSpecificOutput: {
-        hookEventName: input.hook_event_name || 'Stop',
-        additionalContext: issue,
-      },
-    };
-    process.stderr.write(`[caveman] Stop: blocked (${blockCount}/3) — ${issue.slice(0, 80)}\n`);
-    process.stdout.write(JSON.stringify(output));
+    // Block / request continuation: exit 2 + reason on stderr.
+    process.stderr.write(`[caveman] Stop: blocked (${blockCount}/3) — ${issue}\n`);
+    process.stdout.write(JSON.stringify({}));
     process.exit(2);
   }
 
@@ -126,5 +132,6 @@ async function main() {
 
 main().catch((err) => {
   process.stderr.write(`[caveman] Stop error: ${err.message}\n`);
-  process.exit(1);
+  // Never trap the user on a Stop hook error — allow the turn to end.
+  process.stdout.write(JSON.stringify({}));
 });

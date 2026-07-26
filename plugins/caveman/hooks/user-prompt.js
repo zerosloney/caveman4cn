@@ -1,7 +1,16 @@
 #!/usr/bin/env node
 // caveman — ZCode UserPromptSubmit hook
-// Checks if the user prompt is requesting caveman mode activation.
-// Can block the request if the prompt is empty or missing required info.
+// Tracks caveman mode switches across a session and blocks empty prompts.
+//
+// Responsibilities:
+//   - Empty/too-short prompt -> block (exit 2 + stderr reason, no model call)
+//   - "/caveman <mode>"       -> persist mode to ~/.caveman-active
+//   - "stop caveman"/"normal" -> clear the flag (revert to verbose)
+//   - caveman-related keyword -> inject a short reminder via additionalContext
+//
+// ZCode hook stdout contract (diagnosing-hooks §2): strict JSON schema.
+// Pass-through: stdout `{}` + exit 0. Block: stdout `{}` + exit 2 + stderr.
+// Inject context: stdout `{additionalContext: "..."}` + exit 0.
 
 const path = require('path');
 const fs = require('fs');
@@ -45,32 +54,30 @@ async function main() {
   process.stdin.setEncoding('utf-8');
   for await (const chunk of process.stdin) raw += chunk;
 
-  const input = JSON.parse(raw);
+  let input;
+  try {
+    input = JSON.parse(raw);
+  } catch {
+    // Bad stdin — pass through, never trap the user.
+    process.stdout.write(JSON.stringify({}));
+    return;
+  }
   const prompt = (input.prompt || '').trim();
 
   // If prompt is empty or too short, block with a reason
   if (!prompt || prompt.length < 3) {
-    const output = {
-      continue: false,
-      reason: '请在提示词中包含具体需求。',
-      hookSpecificOutput: {
-        hookEventName: input.hook_event_name || 'UserPromptSubmit',
-        additionalContext: '空提示词被阻断。请提供具体问题描述。',
-      },
-    };
-    process.stderr.write('[caveman] UserPromptSubmit: empty prompt blocked\n');
-    process.stdout.write(JSON.stringify(output));
+    process.stderr.write('[caveman] Empty prompt blocked. Provide a specific question.\n');
+    process.stdout.write(JSON.stringify({}));
     process.exit(2);
   }
 
-  // Check for caveman-related keywords and log
+  // Check for caveman-related keywords
   const cavemanKeywords = ['caveman', 'terse', 'brief', 'concise', 'shorter', 'less token'];
   const hasCavemanRequest = cavemanKeywords.some((kw) => prompt.toLowerCase().includes(kw));
   const mode = getCavemanMode();
 
   // Toggle the persistent flag so /caveman actually switches mode and
-  // "stop caveman" / "normal mode" reverts it. session-start.js writes the
-  // flag on startup; this keeps it in sync across the session.
+  // "stop caveman" / "normal mode" reverts it.
   const lowerPrompt = prompt.toLowerCase();
   const offPhrases = ['stop caveman', 'normal mode', 'no caveman', 'caveman off', 'disable caveman'];
   if (offPhrases.some((p) => lowerPrompt.includes(p))) {
@@ -84,20 +91,18 @@ async function main() {
     process.stderr.write(`[caveman] UserPromptSubmit: caveman request detected, mode=${mode}\n`);
   }
 
-  // Allow through
-  const output = {
-    continue: true,
-    hookSpecificOutput: {
-      hookEventName: input.hook_event_name || 'UserPromptSubmit',
-      additionalContext: hasCavemanRequest
-        ? `Caveman mode active (${mode}). Respond in compressed style.`
-        : '',
-    },
-  };
-  process.stdout.write(JSON.stringify(output));
+  // Allow through. Inject a short reminder only when caveman was mentioned,
+  // so non-caveman prompts pass through untouched.
+  const additionalContext = hasCavemanRequest
+    ? `Caveman mode active (${mode}). Respond in compressed style.`
+    : '';
+  process.stdout.write(
+    JSON.stringify(additionalContext ? { additionalContext } : {})
+  );
 }
 
 main().catch((err) => {
   process.stderr.write(`[caveman] UserPromptSubmit error: ${err.message}\n`);
-  process.exit(1);
+  // Pass through on any error — never trap the user.
+  process.stdout.write(JSON.stringify({}));
 });

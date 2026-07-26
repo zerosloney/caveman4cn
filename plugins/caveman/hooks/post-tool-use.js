@@ -1,6 +1,10 @@
 #!/usr/bin/env node
 // caveman — ZCode PostToolUse hook
 // Tracks tool usage for caveman stats. Logs to local file for stats command.
+//
+// ZCode hook stdout contract (diagnosing-hooks §2): strict JSON schema.
+// The only recognized key for context injection is `additionalContext`.
+// Emit `{}` when there's nothing to inject.
 
 const path = require('path');
 const fs = require('fs');
@@ -8,7 +12,7 @@ const fs = require('fs');
 function logStats(toolName, toolResponse) {
   // Append to a local stats log for the caveman-stats command
   try {
-    const dataDir = process.env.ZCODE_PLUGIN_DATA || path.join(process.env.HOME || '.', '.caveman');
+    const dataDir = process.env.ZCODE_PLUGIN_DATA || path.join(process.env.HOME || process.env.USERPROFILE || '.', '.caveman');
     if (!fs.existsSync(dataDir)) fs.mkdirSync(dataDir, { recursive: true });
 
     const logFile = path.join(dataDir, 'tool-usage.log');
@@ -26,34 +30,35 @@ async function main() {
   process.stdin.setEncoding('utf-8');
   for await (const chunk of process.stdin) raw += chunk;
 
-  const input = JSON.parse(raw);
+  let input;
+  try {
+    input = JSON.parse(raw);
+  } catch {
+    process.stdout.write(JSON.stringify({}));
+    return;
+  }
   const toolName = input.tool_name || '';
   const toolResponse = input.tool_response || {};
 
   // Log tool usage for stats
   logStats(toolName, toolResponse);
 
-  // Provide context about the tool result
+  // Provide context about the tool result only when noteworthy
   let additionalContext = '';
   if (toolResponse && typeof toolResponse === 'object') {
     const resultStr = JSON.stringify(toolResponse);
     if (resultStr.length > 5000) {
-      additionalContext = `[caveman] ${toolName} 返回了较大的响应 (${resultStr.length} bytes)。`;
+      additionalContext = `[caveman] ${toolName} returned a large response (${resultStr.length} bytes).`;
     }
   }
 
-  const output = {
-    hookSpecificOutput: {
-      hookEventName: input.hook_event_name || 'PostToolUse',
-      additionalContext,
-    },
-  };
-
   process.stderr.write(`[caveman] PostToolUse: ${toolName} completed\n`);
-  process.stdout.write(JSON.stringify(output));
+  process.stdout.write(
+    JSON.stringify(additionalContext ? { additionalContext } : {})
+  );
 }
 
 main().catch((err) => {
   process.stderr.write(`[caveman] PostToolUse error: ${err.message}\n`);
-  process.exit(1);
+  process.stdout.write(JSON.stringify({}));
 });
