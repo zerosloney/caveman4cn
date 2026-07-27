@@ -113,6 +113,8 @@ function findCurrentTranscript() {
  *   2. { type: "model_complete", payload: { usage: { inputTokens, ... } } }
  *   3. { type: "assistant", message: { usage: {...} } }
  *   4. { usage: {...} } / { payload: { usage: {...} } } / { providerData: { usage: {...} } }
+ *   5. Qwen Code: { type: "assistant", usageMetadata: { promptTokenCount, candidatesTokenCount,
+ *                  cachedContentTokenCount, ... } }  (Gemini/AiStudio style, top-level)
  */
 function extractUsage(rec) {
   if (!rec) return null;
@@ -129,6 +131,8 @@ function extractUsage(rec) {
   candidates.push(rec.usage);
   if (rec.payload) candidates.push(rec.payload.usage);
   if (rec.providerData) candidates.push(rec.providerData.usage);
+  // Qwen Code stores usage in top-level `usageMetadata` (Gemini/AiStudio style).
+  if (rec.usageMetadata) candidates.push(rec.usageMetadata);
 
   for (const u of candidates) {
     if (!u) continue;
@@ -150,6 +154,17 @@ function extractUsage(rec) {
         outputTokens: u.completion_tokens || 0,
         cacheReadTokens: pd.cached_tokens || u.prompt_cache_hit_tokens || 0,
         cacheWriteTokens: u.prompt_cache_write_tokens || 0,
+      };
+    }
+    // Gemini / Qwen Code style (usageMetadata):
+    //   promptTokenCount, candidatesTokenCount, cachedContentTokenCount,
+    //   thoughtsTokenCount, totalTokenCount.
+    if (u.promptTokenCount != null || u.candidatesTokenCount != null) {
+      return {
+        inputTokens: u.promptTokenCount || 0,
+        outputTokens: u.candidatesTokenCount || 0,
+        cacheReadTokens: u.cachedContentTokenCount || 0,
+        cacheWriteTokens: 0,
       };
     }
   }
