@@ -1,6 +1,10 @@
 #!/usr/bin/env node
 // caveman — shared configuration resolver (ZCode build)
 //
+// ⚠️ TEMPLATE FILE — do not edit plugin copies directly.
+// This is the single source of truth. Run `npm run sync:shared` to regenerate
+// plugins/caveman-<id>/hooks/caveman-config.js from this template.
+//
 // Resolution order for default mode:
 //   1. CAVEMAN_DEFAULT_MODE environment variable
 //   2. Repo-local config (checked-in, per-project default):
@@ -29,6 +33,129 @@ const VALID_MODES = [
   'wenyan-lite', 'wenyan', 'wenyan-full', 'wenyan-ultra',
   'commit', 'review', 'compress'
 ];
+
+
+// ── Per-agent data isolation ─────────────────────────────────────────────────
+// Each coding agent (zcode/codebuddy/qwen/qoder/trae) keeps its own state under
+// ~/.caveman/<agent>/ so multiple agents running on the same machine never
+// clobber each other's mode flag, mode-log, or lifetime-saved badge. The agent
+// id is hardcoded per build — every plugin copy knows which agent it belongs to.
+const AGENT_ID = 'zcode';
+
+function homeDir() {
+  return process.env.HOME || process.env.USERPROFILE || '.';
+}
+
+// Root caveman data dir (shared across agents for config.json only).
+function getCavemanRoot() {
+  return process.env.ZCODE_PLUGIN_DATA || path.join(homeDir(), '.caveman');
+}
+
+// Per-agent data dir: ~/.caveman/<agent>/
+function getAgentDataDir() {
+  return path.join(getCavemanRoot(), AGENT_ID);
+}
+
+function getAgentFlagPath() {
+  return path.join(getAgentDataDir(), 'active');
+}
+
+function getAgentPrevFlagPath() {
+  return path.join(getAgentDataDir(), 'active.prev');
+}
+
+function getAgentModeLogPath() {
+  return path.join(getAgentDataDir(), 'mode-log.jsonl');
+}
+
+function getAgentLifetimeFile() {
+  return path.join(getAgentDataDir(), 'lifetime-saved.json');
+}
+
+function getAgentSnapshotFile() {
+  return path.join(getAgentDataDir(), 'session-snapshot.json');
+}
+
+function getAgentCounterFile() {
+  return path.join(getAgentDataDir(), 'caveman-stop-counter');
+}
+
+// One-time migration from the legacy flat layout (~/.caveman-active,
+// ~/.caveman/lifetime-saved.json) into this agent's subdirectory. Idempotent:
+// skips any file that already exists in the agent dir. Leaves the legacy files
+// in place so other agents can still migrate from them on their first run.
+// Best-effort, silent on failure.
+function migrateLegacyFiles() {
+  try {
+    const dir = getAgentDataDir();
+    fs.mkdirSync(dir, { recursive: true });
+
+    // 1. Mode flag: ~/.caveman-active -> <agent>/active
+    const legacyFlag = path.join(homeDir(), '.caveman-active');
+    const newFlag = getAgentFlagPath();
+    if (!fs.existsSync(newFlag)) {
+      try {
+        const st = fs.lstatSync(legacyFlag);
+        if (st.isFile() && !st.isSymbolicLink() && st.size <= 64) {
+          const raw = fs.readFileSync(legacyFlag, 'utf-8').trim().toLowerCase();
+          if (VALID_MODES.includes(raw)) safeWriteFlag(newFlag, raw);
+        }
+      } catch { /* legacy flag absent — nothing to migrate */ }
+    }
+
+    // 2. Previous-mode flag: ~/.caveman-active.prev -> <agent>/active.prev
+    const legacyPrev = path.join(homeDir(), '.caveman-active.prev');
+    const newPrev = getAgentPrevFlagPath();
+    if (!fs.existsSync(newPrev)) {
+      try {
+        const st = fs.lstatSync(legacyPrev);
+        if (st.isFile() && !st.isSymbolicLink() && st.size <= 64) {
+          const raw = fs.readFileSync(legacyPrev, 'utf-8').trim().toLowerCase();
+          if (VALID_MODES.includes(raw)) safeWriteFlag(newPrev, raw);
+        }
+      } catch { /* absent — skip */ }
+    }
+
+    // 3. Lifetime savings: ~/.caveman/lifetime-saved.json -> <agent>/lifetime-saved.json
+    //    Take max() with any existing value, since the legacy file may have
+    //    accumulated savings from multiple agents before isolation.
+    const legacyLifetime = path.join(getCavemanRoot(), 'lifetime-saved.json');
+    try {
+      const legacyRaw = fs.readFileSync(legacyLifetime, 'utf-8');
+      const legacy = JSON.parse(legacyRaw);
+      if (legacy && typeof legacy.lifetimeSaved === 'number') {
+        let prev = 0;
+        try {
+          const cur = JSON.parse(fs.readFileSync(getAgentLifetimeFile(), 'utf-8'));
+          if (cur && typeof cur.lifetimeSaved === 'number') prev = cur.lifetimeSaved;
+        } catch { /* no existing agent file */ }
+        const merged = Math.max(prev, legacy.lifetimeSaved);
+        if (merged > 0) {
+          fs.writeFileSync(
+            getAgentLifetimeFile(),
+            JSON.stringify({ lifetimeSaved: merged, updatedAt: new Date().toISOString() })
+          );
+        }
+      }
+    } catch { /* legacy lifetime file absent or invalid — skip */ }
+
+    // 4. Mode-transition log: ~/.caveman-mode-log.jsonl -> <agent>/mode-log.jsonl
+    //    Append-only; copy if the agent log doesn't exist yet.
+    const legacyLog = path.join(homeDir(), '.caveman-mode-log.jsonl');
+    const newLog = getAgentModeLogPath();
+    if (!fs.existsSync(newLog)) {
+      try {
+        const raw = fs.readFileSync(legacyLog, 'utf-8');
+        if (raw.trim()) {
+          appendFlag(newLog, raw.trim());
+        }
+      } catch { /* absent — skip */ }
+    }
+  } catch {
+    // Migration is best-effort; never block session start.
+  }
+}
+
 
 function getConfigDir() {
   if (process.env.XDG_CONFIG_HOME) {
@@ -272,20 +399,18 @@ function appendFlag(filePath, line) {
 }
 
 // Mode-transition log (#601). Whenever the active-mode flag actually changes,
-// append {ts, mode, prev} to $HOME/.caveman-mode-log.jsonl so caveman-stats
-// can attribute output tokens to the mode that was active when each message
-// was generated. mode/prev are a VALID_MODES string or null (null = caveman
-// off). No-op when the mode is unchanged; best-effort like all flag IO.
-const MODE_LOG_BASENAME = '.caveman-mode-log.jsonl';
-
-function recordModeChange(homeDir, newMode) {
+// append {ts, mode, prev} to <agent>/mode-log.jsonl so caveman-stats can
+// attribute output tokens to the mode that was active when each message was
+// generated. mode/prev are a VALID_MODES string or null (null = caveman off).
+// No-op when the mode is unchanged; best-effort like all flag IO.
+function recordModeChange(newMode) {
   try {
-    const flagPath = path.join(homeDir, '.caveman-active');
+    const flagPath = getAgentFlagPath();
     const current = readFlag(flagPath);
     const next = newMode || null;
     if ((current || null) === next) return;
     appendFlag(
-      path.join(homeDir, MODE_LOG_BASENAME),
+      getAgentModeLogPath(),
       JSON.stringify({ ts: Date.now(), mode: next, prev: current || null })
     );
   } catch (e) {
@@ -318,5 +443,9 @@ function readHistory(filePath) {
 module.exports = {
   getDefaultMode, getConfigDir, getConfigPath, findRepoConfigPath,
   VALID_MODES, safeWriteFlag, readFlag, appendFlag, readHistory,
-  recordModeChange, MODE_LOG_BASENAME
+  recordModeChange,
+  AGENT_ID, homeDir, getCavemanRoot, getAgentDataDir,
+  getAgentFlagPath, getAgentPrevFlagPath, getAgentModeLogPath,
+  getAgentLifetimeFile, getAgentSnapshotFile, getAgentCounterFile,
+  migrateLegacyFiles
 };
