@@ -16,11 +16,10 @@
 const path = require('path');
 const fs = require('fs');
 const {
-  getDefaultMode, safeWriteFlag, recordModeChange
+  getDefaultMode, safeWriteFlag, recordModeChange, getAgentFlagPath, migrateLegacyFiles
 } = require('./caveman-config');
 
-const homeDir = process.env.HOME || process.env.USERPROFILE || '.';
-const flagPath = path.join(homeDir, '.caveman-active');
+const flagPath = getAgentFlagPath();
 
 // Resolve plugin root. Trae sets no plugin-root var; CLAUDE_PLUGIN_ROOT is a
 // legacy alias; final fallback resolves from this script's location.
@@ -66,6 +65,9 @@ async function main() {
   const mode = getDefaultMode();
   const skillContent = resolveSkillContent();
 
+  // One-time migration of legacy flat-layout state into this agent's subdir.
+  migrateLegacyFiles();
+
   let additionalContext = '';
   const source = input.source || '';
   // Trae sends source on SessionStart; treat empty/unknown the same as startup
@@ -75,7 +77,7 @@ async function main() {
       ? `Caveman mode active (${mode}). Rules:\n${skillContent}`
       : `Caveman mode active (${mode}). ${FALLBACK_RULES}`;
 
-    recordModeChange(homeDir, mode);
+    recordModeChange(mode);
     safeWriteFlag(flagPath, mode);
   }
 

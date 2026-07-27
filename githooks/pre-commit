@@ -1,0 +1,83 @@
+#!/usr/bin/env node
+// pre-commit hook: keep shared/ template and plugin caveman-config.js copies
+// in sync. Runs `npm run sync:shared`; if any file would change, re-stages the
+// synced files and asks the developer to re-review the diff before committing.
+//
+// This hook is installed by `scripts/setup-git-hooks.js` (run automatically on
+// `npm install` via the postinstall script). It lives in the repo as
+// `githooks/pre-commit` so the source is version-controlled; git copies it to
+// `.git/hooks/pre-commit` and marks it executable.
+//
+// Behavior:
+//   - sync exits 0 (everything in sync) → hook allows the commit.
+//   - sync exits 1 (one or more files changed) → hook re-stages the changed
+//     files, prints a notice, and ABORTS the commit so the developer can
+//     re-review the now-updated diff. The next `git commit` will pass.
+//   - sync exits 2 (template malformed / behavior check failed) → hook
+//     ABORTS the commit and surfaces the error. The developer must fix the
+//     template before committing.
+//
+// Skip with `git commit --no-verify` if you intentionally need to bypass
+// (e.g. WIP snapshots), but never push a desynced tree.
+
+const { spawnSync } = require('child_process');
+const path = require('path');
+
+// Resolve the repo root via git itself rather than __dirname — the hook is
+// copied into .git/hooks/ at install time, so __dirname is unreliable here.
+// Falling back to process.cwd() covers the case where git invokes the hook
+// from a subdirectory.
+let repoRoot;
+try {
+  const r = spawnSync('git', ['rev-parse', '--show-toplevel'], { encoding: 'utf-8' });
+  repoRoot = (r.stdout || '').trim();
+} catch { /* git missing — fall through */ }
+if (!repoRoot) repoRoot = process.cwd();
+const syncScript = path.join(repoRoot, 'scripts', 'sync-shared.js');
+
+const r = spawnSync(process.execPath, [syncScript], {
+  stdio: 'inherit',
+  cwd: repoRoot,
+});
+
+if (r.status === 0) {
+  // Everything in sync — nothing to do.
+  process.exit(0);
+}
+
+if (r.status === 1) {
+  // Files were regenerated. Stage them so the developer doesn't have to
+  // hunt for which paths changed, then abort so they can re-review.
+  const targets = [
+    'plugins/caveman-codebuddy/hooks/caveman-config.js',
+    'plugins/caveman-qoder/hooks/caveman-config.js',
+    'plugins/caveman-qwen/hooks/caveman-config.js',
+    'plugins/caveman-trae/hooks/caveman-config.js',
+    'plugins/caveman-zcode/hooks/caveman-config.js',
+  ];
+  const git = spawnSync('git', ['add', ...targets], {
+    stdio: 'inherit',
+    cwd: repoRoot,
+  });
+  if (git.status !== 0) {
+    process.stderr.write(
+      '[pre-commit] warning: `git add` for synced files failed; ' +
+      'please stage them manually.\n'
+    );
+  }
+  process.stderr.write(
+    '\n[pre-commit] shared/ template and plugin copies were out of sync.\n' +
+    '  The plugin files have been regenerated and re-staged.\n' +
+    '  Please review the updated diff and re-run `git commit`.\n' +
+    '  (bypass with --no-verify only if you understand the consequences.)\n\n'
+  );
+  process.exit(1);
+}
+
+// status === 2 or any other non-zero: hard error from sync (malformed
+// template, behavior check failure). Surface and abort.
+process.stderr.write(
+  '\n[pre-commit] shared sync failed with a hard error. Commit aborted.\n' +
+  '  Fix the template, run `npm run sync:shared` locally to confirm, then retry.\n\n'
+);
+process.exit(1);

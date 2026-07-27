@@ -10,10 +10,11 @@
 //     the summarizer to preserve caveman mode behavior.
 
 const path = require('path');
-const { readFlag } = require('./caveman-config');
+const {
+  readFlag, getAgentFlagPath
+} = require('./caveman-config');
 
-const homeDir = process.env.HOME || process.env.USERPROFILE || '.';
-const flagPath = path.join(homeDir, '.caveman-active');
+const flagPath = getAgentFlagPath();
 
 async function main() {
   let raw = '';

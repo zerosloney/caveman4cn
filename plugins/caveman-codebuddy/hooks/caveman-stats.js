@@ -14,6 +14,7 @@
 
 const fs = require('fs');
 const path = require('path');
+const { getAgentDataDir, getAgentLifetimeFile, getAgentSnapshotFile } = require('./caveman-config');
 
 // CodeBuddy stores one JSONL transcript per session under
 // ~/.codebuddy/projects/<encoded-project>/<uuid>.jsonl
@@ -23,13 +24,10 @@ const PROJECTS_DIR = path.join(
   'projects'
 );
 
-// Host-local data dir (no CODEBUDDY_PLUGIN_DATA env var exists; plugin cache is
-// read-only and external file refs fail per CodeBuddy docs, so persist under ~ ).
-const DATA_DIR = path.join(
-  process.env.HOME || process.env.USERPROFILE || '.',
-  '.caveman'
-);
-const LIFETIME_FILE = path.join(DATA_DIR, 'lifetime-saved.json');
+// Per-agent data dir: ~/.caveman/codebuddy/
+const DATA_DIR = getAgentDataDir();
+const LIFETIME_FILE = getAgentLifetimeFile();
+const SNAPSHOT_FILE = getAgentSnapshotFile();
 
 // Empirical caveman compression vs verbose baseline. README promises ~65%.
 // Used only for the *baseline* estimate line — input/output come from real logs.
@@ -296,12 +294,34 @@ function writeLifetimeBadge(stats) {
   } catch {}
 }
 
+/**
+ * Persist a current-session snapshot so the statusline can render near-real-time
+ * per-session token usage without re-scanning transcripts on every (~300ms) call.
+ * Written by the Stop hook at the end of each turn; best-effort, silent on fail.
+ */
+function writeSessionSnapshot(stats) {
+  try {
+    if (!fs.existsSync(DATA_DIR)) fs.mkdirSync(DATA_DIR, { recursive: true });
+    const payload = {
+      turns: stats.turns || 0,
+      input: stats.input || 0,
+      output: stats.output || 0,
+      saved: stats.saved || 0,
+      pct: stats.pct || 0,
+      requests: stats.requests || 0,
+      updatedAt: new Date().toISOString(),
+    };
+    fs.writeFileSync(SNAPSHOT_FILE, JSON.stringify(payload));
+  } catch {}
+}
+
 module.exports = {
   PROJECTS_DIR,
   DATA_DIR,
   computeStats,
   formatStats,
   writeLifetimeBadge,
+  writeSessionSnapshot,
   findCurrentTranscript,
   listTranscripts,
 };

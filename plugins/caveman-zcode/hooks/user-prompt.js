@@ -22,7 +22,8 @@
 const path = require('path');
 const fs = require('fs');
 const {
-  getDefaultMode, safeWriteFlag, readFlag, recordModeChange, VALID_MODES
+  getDefaultMode, safeWriteFlag, readFlag, recordModeChange, VALID_MODES,
+  getAgentFlagPath, getAgentPrevFlagPath
 } = require('./caveman-config');
 const {
   computeStats, formatStats, writeLifetimeBadge
@@ -31,9 +32,8 @@ const {
 // Modes handled by their own slash commands — not selectable via /caveman <arg>.
 const INDEPENDENT_MODES = new Set(['commit', 'review', 'compress']);
 
-const homeDir = process.env.HOME || process.env.USERPROFILE || '.';
-const flagPath = path.join(homeDir, '.caveman-active');
-const prevPath = path.join(homeDir, '.caveman-active.prev');
+const flagPath = getAgentFlagPath();
+const prevPath = getAgentPrevFlagPath();
 
 // ── Stats handling ──────────────────────────────────────────────────────────
 
@@ -163,7 +163,7 @@ async function main() {
   const slashMode = parseSlashCommand(lowerPrompt);
   if (slashMode) {
     if (slashMode === 'off') {
-      recordModeChange(homeDir, null);
+      recordModeChange(null);
       try { fs.unlinkSync(flagPath); } catch (e) {}
       try { fs.unlinkSync(prevPath); } catch (e) {}
       currentMode = null;
@@ -174,12 +174,12 @@ async function main() {
       if (current && !INDEPENDENT_MODES.has(current)) {
         safeWriteFlag(prevPath, current);
       }
-      recordModeChange(homeDir, slashMode);
+      recordModeChange(slashMode);
       safeWriteFlag(flagPath, slashMode);
       currentMode = slashMode;
       changedMode = true;
     } else {
-      recordModeChange(homeDir, slashMode);
+      recordModeChange(slashMode);
       safeWriteFlag(flagPath, slashMode);
       currentMode = slashMode;
       changedMode = true;
@@ -190,7 +190,7 @@ async function main() {
   if (!slashMode) {
     const nlMode = parseNlActivation(lowerPrompt);
     if (nlMode === 'off') {
-      recordModeChange(homeDir, null);
+      recordModeChange(null);
       try { fs.unlinkSync(flagPath); } catch (e) {}
       try { fs.unlinkSync(prevPath); } catch (e) {}
       currentMode = null;
@@ -198,7 +198,7 @@ async function main() {
     } else if (nlMode && nlMode !== 'off') {
       const mode = getDefaultMode();
       if (mode !== 'off') {
-        recordModeChange(homeDir, mode);
+        recordModeChange(mode);
         safeWriteFlag(flagPath, mode);
         currentMode = mode;
         changedMode = true;
@@ -212,11 +212,11 @@ async function main() {
     const prev = readFlag(prevPath);
     try { fs.unlinkSync(prevPath); } catch (e) {}
     if (prev && !INDEPENDENT_MODES.has(prev)) {
-      recordModeChange(homeDir, prev);
+      recordModeChange(prev);
       safeWriteFlag(flagPath, prev);
       currentMode = prev;
     } else {
-      recordModeChange(homeDir, null);
+      recordModeChange(null);
       try { fs.unlinkSync(flagPath); } catch (e) {}
       currentMode = null;
     }

@@ -3,7 +3,7 @@
 //
 // Qwen Code contract (statusLine API under ui.statusLine in settings.json):
 //   - stdin: JSON with { cwd, workspace.current_dir, model.display_name,
-//     session_id, context_window, metrics, ... }
+//     session_id, context_window, metrics, cost, ... }
 //   - stdout: first line(s) become the status line text. ANSI colors supported
 //     (set respectUserColors:true in settings to preserve them).
 //   - Called on message/file changes (~300ms debounce); refreshInterval for
@@ -12,12 +12,17 @@
 //     wraps the command in `node "..."` so this works cross-platform.
 //
 // Data sources:
-//   - Current caveman mode via ~/.caveman-active (readFlag from caveman-config)
-//   - Lifetime token savings via ~/.caveman/lifetime-saved.json
+//   - Current caveman mode via ~/.caveman/qwen/active
+//   - Lifetime token savings via ~/.caveman/qwen/lifetime-saved.json
+//   - Session snapshot via ~/.caveman/qwen/session-snapshot.json (written by Stop hook)
 //   - User display preferences via ~/.caveman/config.json (statusline section)
 //   - Git branch via `git -C <cwd> branch --show-current`
-//   - Working directory basename from stdin's cwd / workspace.current_dir field
+//   - Working directory basename from stdin's cwd field
+//   - Cost from stdin's cost field (defensive, may be absent)
+//   - Context window from stdin's context_window/metrics (defensive, may be absent)
 //
+// Agent-isolated: data stored under ~/.caveman/qwen/ so multiple agents running
+// on the same machine never share or clobber each other's stats.
 // Tolerates missing files, non-git directories, and malformed stdin.
 // Any error → output empty string (Qwen Code displays nothing, not broken).
 
@@ -25,12 +30,18 @@ const path = require('path');
 const fs = require('fs');
 const { execFileSync } = require('child_process');
 
+// ── Agent identity (hardcoded per build) ─────────────────────────────────────
+const AGENT_ID = 'qwen';
+
 // ── Paths ───────────────────────────────────────────────────────────────────
 
 const homeDir = process.env.HOME || process.env.USERPROFILE || '.';
-const flagPath = path.join(homeDir, '.caveman-active');
-const lifetimeFile = path.join(homeDir, '.caveman', 'lifetime-saved.json');
-const configFile = path.join(homeDir, '.caveman', 'config.json');
+const cavemanRoot = path.join(homeDir, '.caveman');
+const agentDir = path.join(cavemanRoot, AGENT_ID);
+const flagPath = path.join(agentDir, 'active');
+const lifetimeFile = path.join(agentDir, 'lifetime-saved.json');
+const snapshotFile = path.join(agentDir, 'session-snapshot.json');
+const configFile = path.join(cavemanRoot, 'config.json'); // shared across agents
 
 // ── ANSI colors ─────────────────────────────────────────────────────────────
 
@@ -40,6 +51,7 @@ const C = {
   yellow: '\x1b[33m',
   blue: '\x1b[34m',
   cyan: '\x1b[36m',
+  magenta: '\x1b[35m',
   gray: '\x1b[90m',
   bold: '\x1b[1m',
 };
@@ -68,8 +80,6 @@ function readText(file) {
 
 /** Get current caveman mode from the flag file. Returns null if off/absent. */
 function getCurrentMode() {
-  // Replicate readFlag logic from caveman-config.js inline to avoid
-  // relative-require fragility when the script is installed elsewhere.
   try {
     const st = fs.lstatSync(flagPath);
     if (st.isSymbolicLink() || !st.isFile()) return null;
@@ -94,12 +104,15 @@ function getLifetimeSavings() {
   return data.lifetimeSaved;
 }
 
+/** Get session snapshot data. Returns null if absent. */
+function getSessionSnapshot() {
+  return readJson(snapshotFile);
+}
+
 /** Get git branch name for a directory. Returns null if not in a git repo. */
 function getGitBranch(cwd) {
   if (!cwd) return null;
   try {
-    // execFileSync 数组参数不经 shell —— cwd 作为字面参数传给 git，杜绝命令注入
-    // （cwd 来自不可信 stdin JSON，字符串拼接 execSync 可被裂开追加任意命令）。
     const out = execFileSync('git', ['-C', cwd, 'branch', '--show-current'], {
       encoding: 'utf-8',
       timeout: 3000,
@@ -119,6 +132,12 @@ function formatShort(n) {
   return String(n);
 }
 
+/** Format a percentage string (e.g. 65 → "65%"). Returns null if invalid. */
+function formatPct(n) {
+  if (n == null || n <= 0) return null;
+  return String(Math.round(n)) + '%';
+}
+
 // ── User config ─────────────────────────────────────────────────────────────
 
 /** Load user preferences from ~/.caveman/config.json statusline section. */
@@ -126,23 +145,30 @@ function loadUserPrefs() {
   const config = readJson(configFile);
   const prefs = (config && config.statusline) || {};
   return {
-    showMode: prefs.showMode !== false,   // default true
-    showDir: prefs.showDir !== false,      // default true
-    showGit: prefs.showGit !== false,      // default true
-    showSavings: prefs.showSavings !== false, // default true
-    showModel: prefs.showModel === true,   // default false
+    showMode: prefs.showMode !== false,
+    showDir: prefs.showDir !== false,
+    showGit: prefs.showGit !== false,
+    showSavings: prefs.showSavings !== false,
+    showModel: prefs.showModel === true,
+    showSessionTokens: prefs.showSessionTokens !== false,
+    showSessionSaved: prefs.showSessionSaved !== false,
+    showCost: prefs.showCost === true,
+    showContext: prefs.showContext === true,
     modeColor: prefs.modeColor || C.green,
     dirColor: prefs.dirColor || C.blue,
     gitColor: prefs.gitColor || C.green,
     savingsColor: prefs.savingsColor || C.yellow,
     modelColor: prefs.modelColor || C.cyan,
+    sessionTokensColor: prefs.sessionTokensColor || C.magenta,
+    sessionSavedColor: prefs.sessionSavedColor || C.green,
+    costColor: prefs.costColor || C.yellow,
+    contextColor: prefs.contextColor || C.cyan,
   };
 }
 
 // ── Main ────────────────────────────────────────────────────────────────────
 
 async function main() {
-  // 1. Read stdin JSON from Qwen Code
   let raw = '';
   process.stdin.setEncoding('utf-8');
   for await (const chunk of process.stdin) raw += chunk;
@@ -151,26 +177,26 @@ async function main() {
   try {
     input = JSON.parse(raw);
   } catch {
-    // Malformed stdin → show nothing
     process.stdout.write('');
     return;
   }
 
-  // 2. Load user preferences
   const prefs = loadUserPrefs();
 
-  // 3. Gather data
   const mode = getCurrentMode();
   const cwd = input.cwd || input.workspace?.current_dir || '';
   const dirName = cwd ? path.basename(cwd) : '';
   const branch = getGitBranch(cwd);
   const savings = getLifetimeSavings();
   const modelName = input.model?.display_name || input.model?.id || '';
+  const snapshot = getSessionSnapshot();
 
-  // 4. Build status line parts
+  const cost = typeof input.cost === 'number' ? input.cost : null;
+  const ctxWindow = input.context_window || input.metrics?.context_window || null;
+  const ctxUsed = input.metrics?.total_tokens || null;
+
   const parts = [];
 
-  // Mode indicator: ⛏ [mode] or ⛏ [off] (gray)
   if (prefs.showMode) {
     const modeText = mode || 'off';
     const isActive = mode && mode !== 'off';
@@ -178,17 +204,44 @@ async function main() {
     parts.push(`${color}⛏ ${modeText}${C.reset}`);
   }
 
-  // Directory: 📁 dirname
   if (prefs.showDir && dirName) {
     parts.push(`${prefs.dirColor}📁 ${dirName}${C.reset}`);
   }
 
-  // Git branch: 🌿 branch
   if (prefs.showGit && branch) {
     parts.push(`${prefs.gitColor}🌿 ${branch}${C.reset}`);
   }
 
-  // Token savings: 💰 12.4k
+  if (prefs.showSessionTokens && snapshot) {
+    const inShort = formatShort(snapshot.input);
+    const outShort = formatShort(snapshot.output);
+    if (inShort && outShort) {
+      parts.push(`${prefs.sessionTokensColor}📊 ${inShort}→${outShort}${C.reset}`);
+    }
+  }
+
+  if (prefs.showSessionSaved && snapshot) {
+    const savedShort = formatShort(snapshot.saved);
+    const pct = formatPct(snapshot.pct);
+    if (savedShort) {
+      const label = pct ? `${savedShort} (${pct})` : savedShort;
+      parts.push(`${prefs.sessionSavedColor}💡 ${label}${C.reset}`);
+    }
+  }
+
+  if (prefs.showCost && cost != null && cost > 0) {
+    // Up to 4 decimal places, trim trailing zeros but keep at least one digit
+    // after the decimal point (so $5.00 → "5.0", not "5" — a bare integer
+    // looks like a token count, not money).
+    const costStr = cost.toFixed(4).replace(/0+$/, '').replace(/\.$/, '.0');
+    parts.push(`${prefs.costColor}💲 ${costStr}${C.reset}`);
+  }
+
+  if (prefs.showContext && ctxWindow && ctxUsed != null) {
+    const remaining = Math.max(0, Math.round((1 - ctxUsed / ctxWindow) * 100));
+    parts.push(`${prefs.contextColor}📉 ${remaining}%${C.reset}`);
+  }
+
   if (prefs.showSavings && savings != null && savings > 0) {
     const short = formatShort(Math.round(savings));
     if (short) {
@@ -196,17 +249,14 @@ async function main() {
     }
   }
 
-  // Model name: 🤖 model
   if (prefs.showModel && modelName) {
     parts.push(`${prefs.modelColor}🤖 ${modelName}${C.reset}`);
   }
 
-  // 5. Output
   const line = parts.join('  ');
   process.stdout.write(line + '\n');
 }
 
 main().catch(() => {
-  // Any unexpected error → output nothing, never break Qwen Code
   process.stdout.write('');
 });

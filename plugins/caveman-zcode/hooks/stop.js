@@ -12,18 +12,15 @@
 
 const path = require('path');
 const fs = require('fs');
+const { getAgentDataDir, getAgentCounterFile, getAgentFlagPath } = require('./caveman-config');
+const { computeStats, writeSessionSnapshot, writeLifetimeBadge } = require('./caveman-stats');
 
-const COUNTER_FILE = 'caveman-stop-counter';
-
-function dataDir() {
-  return process.env.ZCODE_PLUGIN_DATA || path.join(process.env.HOME || process.env.USERPROFILE || '.', '.caveman');
-}
+const COUNTER_FILE = getAgentCounterFile();
 
 function getBlockCount() {
   try {
-    const counterPath = path.join(dataDir(), COUNTER_FILE);
-    if (fs.existsSync(counterPath)) {
-      return parseInt(fs.readFileSync(counterPath, 'utf-8').trim(), 10) || 0;
+    if (fs.existsSync(COUNTER_FILE)) {
+      return parseInt(fs.readFileSync(COUNTER_FILE, 'utf-8').trim(), 10) || 0;
     }
   } catch {}
   return 0;
@@ -31,11 +28,10 @@ function getBlockCount() {
 
 function incrementBlockCount() {
   try {
-    const dir = dataDir();
+    const dir = getAgentDataDir();
     if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
-    const counterPath = path.join(dir, COUNTER_FILE);
     const count = getBlockCount() + 1;
-    fs.writeFileSync(counterPath, String(count));
+    fs.writeFileSync(COUNTER_FILE, String(count));
     return count;
   } catch {
     return 1;
@@ -44,17 +40,29 @@ function incrementBlockCount() {
 
 function resetBlockCount() {
   try {
-    const counterPath = path.join(dataDir(), COUNTER_FILE);
-    if (fs.existsSync(counterPath)) fs.unlinkSync(counterPath);
+    if (fs.existsSync(COUNTER_FILE)) fs.unlinkSync(COUNTER_FILE);
   } catch {}
 }
 
 function isCavemanActive() {
   try {
-    const flagPath = path.join(process.env.HOME || process.env.USERPROFILE || '.', '.caveman-active');
-    return fs.existsSync(flagPath);
+    return fs.existsSync(getAgentFlagPath());
   } catch {
     return false;
+  }
+}
+
+// Near-real-time stats snapshot for the statusline. Computes the current
+// session's token usage and persists it, and refreshes the lifetime badge.
+// Wrapped in try/catch so stats failures never affect the Stop decision.
+function recordSnapshot() {
+  try {
+    const session = computeStats({ lifetime: false });
+    if (session.found) writeSessionSnapshot(session);
+    const lifetime = computeStats({ lifetime: true });
+    writeLifetimeBadge(lifetime);
+  } catch {
+    // Best-effort — snapshot is refreshed on the next Stop anyway.
   }
 }
 
@@ -120,6 +128,13 @@ async function main() {
     return;
   }
   const lastMessage = input.last_assistant_message || '';
+
+  // Record a near-real-time session snapshot + update the lifetime badge so
+  // the statusline reflects the latest turn's token usage. Best-effort: any
+  // failure here must NOT alter the Stop decision. (Note: the transcript may
+  // not yet be flushed for the just-finished turn, so the snapshot lags by at
+  // most one turn — corrected on the next Stop.)
+  recordSnapshot();
 
   if (!isCavemanActive()) {
     // Caveman not active — allow through

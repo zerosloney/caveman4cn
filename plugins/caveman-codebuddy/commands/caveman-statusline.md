@@ -54,48 +54,67 @@ The detected path goes into `settings.json` as a shell command that `node` will 
    当前 settings.json 中的命令：<existing command or 空>
 
    示例输出：
-     ⛏ [full] 📁 my-project  🌿 main  💰 12.4k
+   ```
+   ⛏ [full] 📁 my-project  🌿 main  📊 12.3k→3.9k  💡 7.3k (65%)  💰 12.4k
    ```
 
-   If the status is **broken**, explain why (path doesn't exist, or uses `~`/`/c/` form) and offer to fix it via `--setup`.
+	   If the status is **broken**, explain why (path doesn't exist, or uses `~`/`/c/` form) and offer to fix it via `--setup`.
 
 4. **If not configured (or broken)**, show the setup instructions:
 
-   ```
-   配置步骤：
+	   ```
+	   配置步骤：
 
-   编辑 ~/.codebuddy/settings.json，添加（路径用上面检测到的真实路径）：
+	   编辑 ~/.codebuddy/settings.json，添加（路径用上面检测到的真实路径）：
 
-     {
-       "statusLine": {
-         "type": "command",
-         "command": "node <detected-native-path>",
-         "padding": 0
-       }
-     }
+	     {
+	       "statusLine": {
+	         "type": "command",
+	         "command": "node <detected-native-path>",
+	         "padding": 0,
+	         "refreshInterval": 5
+	       }
+	     }
 
-   注意：
-   - 路径必须是原生绝对路径（Windows 上用 C:/... 正斜杠）
-   - 不要用 ~ 或 /c/ 形式 —— CodeBuddy 不展开 ~，node 不认 /c/
-   - marketplace 安装的插件路径含版本号目录，升级版本后路径会变，重新跑 /caveman-statusline --setup 即可
+	   注意：
+	   - 路径必须是原生绝对路径（Windows 上用 C:/... 正斜杠）
+	   - 不要用 ~ 或 /c/ 形式 —— CodeBuddy 不展开 ~，node 不认 /c/
+	   - marketplace 安装的插件路径含版本号目录，升级版本后路径会变，重新跑 /caveman-statusline --setup 即可
 
-   然后重启 CodeBuddy 或执行 /reload-plugins。
+	   然后重启 CodeBuddy 或执行 /reload-plugins。
 
-   自定义显示：
-   编辑 ~/.caveman/config.json，添加 statusline 节：
+	   自定义显示：
+	   编辑 ~/.caveman/config.json，添加 statusline 节：
 
-     {
-       "statusline": {
-         "showMode": true,
-         "showDir": true,
-         "showGit": true,
-         "showSavings": true,
-         "showModel": false
-       }
-     }
+	     {
+	       "statusline": {
+	         "showMode": true,
+	         "showDir": true,
+	         "showGit": true,
+	         "showSavings": true,
+	         "showModel": false,
+	         "showSessionTokens": true,
+	         "showSessionSaved": true,
+	         "showCost": false,
+	         "showContext": false
+	       }
+	     }
 
-   支持的颜色和元素详见 scripts/statusline.js 注释。
-   ```
+	   显示字段说明：
+	     ⛏ mode     — 当前模式（off/lite/full/ultra）
+	     📁 dir      — 当前工作目录名
+	     🌿 branch   — git 分支名
+	     📊 in→out   — 本会话输入/输出 token（实时，Stop hook 更新）
+	     💡 saved    — 本会话节省 token 及百分比
+	     💲 cost     — 本会话成本（需宿主 stdin 提供 cost 字段，默认关）
+	     📉 context  — 剩余上下文百分比（需宿主提供，默认关）
+	     💰 savings  — 累计节省 token（lifetime）
+	     🤖 model    — 模型名（默认关）
+
+	   支持的颜色键（color 值：green/blue/yellow/cyan/magenta/gray）：
+	     modeColor, dirColor, gitColor, savingsColor, modelColor,
+	     sessionTokensColor, sessionSavedColor, costColor, contextColor
+	   ```
 
 5. **If the user passes `--setup`**: Offer to write the config automatically. Read `~/.codebuddy/settings.json`, merge the `statusLine` key, and write it back. Show a diff before writing. Ownership rules:
    - No existing `statusLine` → write it.
