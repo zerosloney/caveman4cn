@@ -30,7 +30,7 @@ ZCode 与 CodeBuddy 靠各自清单目录约定区分；Trae 没有 marketplace/
 
 ```
 caveman4cn/
-├── marketplace.json                     # ZCode 根清单 → caveman-zcode + caveman-qwen + caveman-qoder
+├── marketplace.json                     # ZCode 根清单 → caveman-zcode
 ├── .codebuddy-plugin/marketplace.json   # CodeBuddy 清单 → caveman-codebuddy
 ├── plugins/
 │   ├── caveman-zcode/                   # ZCode 插件（Node hooks）
