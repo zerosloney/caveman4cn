@@ -329,6 +329,22 @@ function install(dryRun) {
     }
   }
 
+  // 复制 caveman-stats.js 到 tools/ 目录（工具注册引用 tools/caveman-stats.js，
+  // 但源文件在 hooks/ 目录，需额外复制一份到 tools/ 让工具能找到）。
+  const statsSrc = path.join(SRC_DIR, 'hooks', 'caveman-stats.js');
+  const statsDest = path.join(EXT_DIR, 'tools', 'caveman-stats.js');
+  if (fs.existsSync(statsSrc)) {
+    if (!dryRun) {
+      fs.mkdirSync(path.dirname(statsDest), { recursive: true });
+      fs.copyFileSync(statsSrc, statsDest);
+      console.log('  installed: tools/caveman-stats.js (from hooks/)');
+    } else {
+      console.log(`  would copy: ${statsSrc} → ${statsDest}`);
+    }
+  } else {
+    console.warn('  跳过 tools/caveman-stats.js（源文件不存在）');
+  }
+
   // 复制根级 manifest 文件 qwen-extension.json
   const manifestSrc = path.join(SRC_DIR, 'qwen-extension.json');
   const manifestDest = path.join(EXT_DIR, 'qwen-extension.json');
