@@ -17,10 +17,11 @@
 
 const path = require('path');
 const fs = require('fs');
-const { readFlag } = require('./caveman-config');
+const {
+  readFlag, getAgentFlagPath
+} = require('./caveman-config');
 
-const homeDir = process.env.HOME || process.env.USERPROFILE || '.';
-const flagPath = path.join(homeDir, '.caveman-active');
+const flagPath = getAgentFlagPath();
 
 function isCavemanActive() {
   return readFlag(flagPath) !== null;

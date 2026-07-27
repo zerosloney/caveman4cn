@@ -10,11 +10,11 @@
 const path = require('path');
 const fs = require('fs');
 const {
-  getDefaultMode, safeWriteFlag, recordModeChange
+  getDefaultMode, safeWriteFlag, recordModeChange,
+  getAgentFlagPath, migrateLegacyFiles
 } = require('./caveman-config');
 
-const homeDir = process.env.HOME || process.env.USERPROFILE || '.';
-const flagPath = path.join(homeDir, '.caveman-active');
+const flagPath = getAgentFlagPath();
 
 // Resolve plugin root. CodeBuddy sets CODEBUDDY_PLUGIN_ROOT; CLAUDE_PLUGIN_ROOT is
 // a legacy alias; final fallback resolves from this script's location.
@@ -66,6 +66,9 @@ async function main() {
   const mode = getDefaultMode();
   const skillContent = resolveSkillContent();
 
+  // One-time migration of legacy flat-layout state into this agent's subdir.
+  migrateLegacyFiles();
+
   let additionalContext = '';
   const source = input.source || '';
   if (source === 'startup' || source === '') {
@@ -75,7 +78,7 @@ async function main() {
       : `Caveman mode active (${mode}). ${FALLBACK_RULES}`;
 
     // Persist active-mode flag with symlink-safe write.
-    recordModeChange(homeDir, mode);
+    recordModeChange(mode);
     safeWriteFlag(flagPath, mode);
   }
 

@@ -16,15 +16,29 @@
 
 const path = require('path');
 const fs = require('fs');
-const { readFlag } = require('./caveman-config');
+const { readFlag, getAgentFlagPath } = require('./caveman-config');
+const { computeStats, writeSessionSnapshot, writeLifetimeBadge } = require('./caveman-stats');
 
-const homeDir = process.env.HOME || process.env.USERPROFILE || '.';
-const flagPath = path.join(homeDir, '.caveman-active');
+const flagPath = getAgentFlagPath();
 
 const MAX_BLOCKS = 3; // matches hooks.json loop_limit; belt-and-suspenders
 
 function isCavemanActive() {
   return readFlag(flagPath) !== null;
+}
+
+// Near-real-time stats snapshot for the statusline. Computes the current
+// session's token usage and persists it, and refreshes the lifetime badge.
+// Wrapped in try/catch so stats failures never affect the Stop decision.
+function recordSnapshot() {
+  try {
+    const session = computeStats({ lifetime: false });
+    if (session.found) writeSessionSnapshot(session);
+    const lifetime = computeStats({ lifetime: true });
+    writeLifetimeBadge(lifetime);
+  } catch {
+    // Best-effort — snapshot is refreshed on the next Stop anyway.
+  }
 }
 
 // Strip fenced and inline code so technical content isn't miscounted as filler.
@@ -82,6 +96,11 @@ async function main() {
   const lastMessage = input.last_assistant_message || '';
   const loopCount = Number(input.loop_count) || 0;
   const stopHookActive = !!input.stop_hook_active;
+
+  // Record a near-real-time session snapshot + update the lifetime badge so
+  // the statusline reflects the latest turn's token usage. Best-effort: any
+  // failure here must NOT alter the Stop decision.
+  recordSnapshot();
 
   if (!isCavemanActive()) {
     process.stdout.write(JSON.stringify({}));

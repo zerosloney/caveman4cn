@@ -42,44 +42,62 @@ Config shape:
    状态行脚本：~/.qwen/extensions/caveman-qwen/scripts/statusline.js
 
    示例输出：
-     ⛏ [full] 📁 my-project  🌿 main  💰 12.4k
+   ```
+   ⛏ [full] 📁 my-project  🌿 main  📊 12.3k→3.9k  💡 7.3k (65%)  💰 12.4k
    ```
 
 3. **If not configured**, show the setup instructions:
 
-   ```
-   配置步骤：
+	   ```
+	   配置步骤：
 
-   编辑 ~/.qwen/settings.json，在 ui.statusLine 下添加：
+	   编辑 ~/.qwen/settings.json，在 ui.statusLine 下添加：
 
-     {
-       "ui": {
-         "statusLine": {
-           "type": "command",
-           "command": "node ~/.qwen/extensions/caveman-qwen/scripts/statusline.js",
-           "refreshInterval": 5
-         }
-       }
-     }
+	     {
+	       "ui": {
+	         "statusLine": {
+	           "type": "command",
+	           "command": "node ~/.qwen/extensions/caveman-qwen/scripts/statusline.js",
+	           "refreshInterval": 5
+	         }
+	       }
+	     }
 
-   注意：statusLine 必须放在 ui 键下，根级别的 statusLine 不生效。
-   设置热重载——保存后立即生效，无需重启 Qwen Code。
+	   注意：statusLine 必须放在 ui 键下，根级别的 statusLine 不生效。
+	   设置热重载——保存后立即生效，无需重启 Qwen Code。
 
-   自定义显示：
-   编辑 ~/.caveman/config.json，添加 statusline 节：
+	   自定义显示：
+	   编辑 ~/.caveman/config.json，添加 statusline 节：
 
-     {
-       "statusline": {
-         "showMode": true,
-         "showDir": true,
-         "showGit": true,
-         "showSavings": true,
-         "showModel": false
-       }
-     }
+	     {
+	       "statusline": {
+	         "showMode": true,
+	         "showDir": true,
+	         "showGit": true,
+	         "showSavings": true,
+	         "showModel": false,
+	         "showSessionTokens": true,
+	         "showSessionSaved": true,
+	         "showCost": false,
+	         "showContext": false
+	       }
+	     }
 
-   支持的颜色和元素详见 scripts/statusline.js 注释。
-   ```
+	   显示字段说明：
+	     ⛏ mode     — 当前模式（off/lite/full/ultra）
+	     📁 dir      — 当前工作目录名
+	     🌿 branch   — git 分支名
+	     📊 in→out   — 本会话输入/输出 token（实时，Stop hook 更新）
+	     💡 saved    — 本会话节省 token 及百分比
+	     💲 cost     — 本会话成本（需宿主 stdin 提供 cost 字段，默认关）
+	     📉 context  — 剩余上下文百分比（需宿主提供，默认关）
+	     💰 savings  — 累计节省 token（lifetime）
+	     🤖 model    — 模型名（默认关）
+
+	   支持的颜色键（color 值：green/blue/yellow/cyan/magenta/gray）：
+	     modeColor, dirColor, gitColor, savingsColor, modelColor,
+	     sessionTokensColor, sessionSavedColor, costColor, contextColor
+	   ```
 
 4. **If the user passes `--setup`**: Offer to write the config automatically. Read `~/.qwen/settings.json`, merge the `ui.statusLine` key (creating `ui` if absent), and write it back. Show a diff before writing. If `ui.statusLine` already exists and points elsewhere, warn and do NOT overwrite unless `--force` is also passed.
 

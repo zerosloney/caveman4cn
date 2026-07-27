@@ -55,6 +55,19 @@
           }
         ]
       }
+    ],
+    "Stop": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node \"${CODEBUDDY_PLUGIN_ROOT}/hooks/stop.js\"",
+            "description": "Check caveman output quality and record session stats snapshot",
+            "timeout": 10,
+            "statusMessage": "Finalizing caveman turn…"
+          }
+        ]
+      }
     ]
   }
 }

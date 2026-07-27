@@ -12,6 +12,7 @@
 
 const fs = require('fs');
 const path = require('path');
+const { getAgentDataDir, getAgentLifetimeFile, getAgentSnapshotFile } = require('./caveman-config');
 
 const AGENTS_DIR = path.join(
   process.env.HOME || process.env.USERPROFILE || '.',
@@ -20,11 +21,10 @@ const AGENTS_DIR = path.join(
   'agents'
 );
 
-// Files written by the caveman plugin under the data dir.
-const DATA_DIR =
-  process.env.ZCODE_PLUGIN_DATA ||
-  path.join(process.env.HOME || process.env.USERPROFILE || '.', '.caveman');
-const LIFETIME_FILE = path.join(DATA_DIR, 'lifetime-saved.json');
+// Per-agent data dir: ~/.caveman/zcode/
+const DATA_DIR = getAgentDataDir();
+const LIFETIME_FILE = getAgentLifetimeFile();
+const SNAPSHOT_FILE = getAgentSnapshotFile();
 
 // Empirical caveman compression vs verbose baseline. README promises ~65%.
 // Used only for the *baseline* estimate line — input/output come from real logs.
@@ -224,12 +224,34 @@ function writeLifetimeBadge(stats) {
   } catch {}
 }
 
+/**
+ * Persist a current-session snapshot so the statusline can render near-real-time
+ * per-session token usage without re-scanning transcripts on every (~300ms) call.
+ * Written by the Stop hook at the end of each turn; best-effort, silent on fail.
+ */
+function writeSessionSnapshot(stats) {
+  try {
+    if (!fs.existsSync(DATA_DIR)) fs.mkdirSync(DATA_DIR, { recursive: true });
+    const payload = {
+      turns: stats.turns || 0,
+      input: stats.input || 0,
+      output: stats.output || 0,
+      saved: stats.saved || 0,
+      pct: stats.pct || 0,
+      requests: stats.requests || 0,
+      updatedAt: new Date().toISOString(),
+    };
+    fs.writeFileSync(SNAPSHOT_FILE, JSON.stringify(payload));
+  } catch {}
+}
+
 module.exports = {
   AGENTS_DIR,
   DATA_DIR,
   computeStats,
   formatStats,
   writeLifetimeBadge,
+  writeSessionSnapshot,
   findCurrentSessionDir,
   listTranscripts,
 };

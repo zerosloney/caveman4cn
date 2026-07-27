@@ -140,6 +140,7 @@ function mergeStatusLine(settings, dryRun) {
     type: 'command',
     command: cmd,
     padding: 0,
+    refreshInterval: 5,
   };
 
   if (existing && typeof existing === 'object' && existing.command) {
