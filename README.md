@@ -117,6 +117,8 @@ Qwen Code 的扩展约定：安装器把扩展铺到 `~/.qwen/extensions/caveman
 
 安装后重启 Qwen Code，或运行 `/extensions` 热重载。
 
+> **注意**：通过 `/extensions install <url>` 或 marketplace UI 安装时，Qwen Code 只复制扩展文件，**不会运行安装脚本**，因此钩子与状态行不会自动注册。安装后必须额外运行 `node scripts/install-qwen.js` 把钩子合并进 `~/.qwen/settings.json`。
+
 ### Qoder
 
 ```bash
