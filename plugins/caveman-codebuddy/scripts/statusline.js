@@ -194,7 +194,8 @@ async function main() {
   const snapshot = getSessionSnapshot();
 
   // 4. Defensive stdin reads (may be absent on some hosts)
-  const cost = typeof input.cost === 'number' ? input.cost : null;
+  // CodeBuddy provides cost as { total_cost_usd, ... } (object), not a number.
+  const cost = input.cost?.total_cost_usd || null;
   const ctxWindow = input.context_window || input.metrics?.context_window || null;
   const ctxUsed = input.metrics?.total_tokens || null;
 
