@@ -31,6 +31,7 @@ ZCode 与 CodeBuddy 靠各自清单目录约定区分；Trae 没有 marketplace/
 ```
 caveman4cn/
 ├── marketplace.json                     # ZCode 根清单 → caveman-zcode
+├── qwen-extension.json                  # Qwen Code 根级扩展清单（Qwen 约定：根目录）
 ├── .codebuddy-plugin/marketplace.json   # CodeBuddy 清单 → caveman-codebuddy
 ├── plugins/
 │   ├── caveman-zcode/                   # ZCode 插件（Node hooks）
@@ -40,7 +41,7 @@ caveman4cn/
 │   ├── caveman-trae/                    # Trae 插件（文档清单 + 安装器铺放资产）
 │   │   └── .trae-plugin/plugin.json     # 仅作文档；Trae 不扫描
 │   ├── caveman-qwen/                    # Qwen Code 扩展（Node hooks + statusline）
-│   │   └── qwen-extension.json          # 根级扩展清单（Qwen 约定：根目录而非子目录）
+│   │   └── qwen-extension.json          # 插件内部清单（安装器复制用）
 │   └── caveman-qoder/                   # Qoder 插件（Node hooks，无 statusline）
 │       └── .qoder-plugin/plugin.json    # Qoder 插件清单
 ├── skills/                              # 共享技能源（真理之源）

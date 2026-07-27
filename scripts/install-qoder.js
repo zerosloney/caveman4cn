@@ -173,9 +173,11 @@ function toPosix(p) {
   return p.replace(/\\/g, '/');
 }
 
+// Qoder 在 Windows 下解析带引号的绝对路径时有 bug——拼接工作目录导致路径错误。
+// POSIX 正斜杠路径无空格，裸写即可。
 function hookCommand(scriptName) {
   const scriptPath = toPosix(path.join(PLUGIN_DIR, 'hooks', scriptName));
-  return `node "${scriptPath}"`;
+  return `node ${scriptPath}`;
 }
 
 function isCavemanHook(hookEntry) {

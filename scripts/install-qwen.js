@@ -159,9 +159,12 @@ function toPosix(p) {
 }
 
 // 构造指向某钩子脚本的 command 字符串。
+// 注意：Qwen Code 在 Windows 下解析带引号的绝对路径时有 bug——它把引号内的
+// 路径和当前工作目录拼接（如 `D:\cwd\"C:/abs/path.js"`），导致文件找不到。
+// POSIX 正斜杠路径无空格，裸写即可，Windows 下 node 同样能解析。
 function hookCommand(scriptName) {
   const scriptPath = toPosix(path.join(EXT_DIR, 'hooks', scriptName));
-  return `node "${scriptPath}"`;
+  return `node ${scriptPath}`;
 }
 
 // 判断一个 hook entry 的 command 是否指向本扩展（用于去重）。
@@ -256,7 +259,7 @@ function stripHooks(settings) {
 function mergeStatusLine(settings, dryRun) {
   if (!settings.ui || typeof settings.ui !== 'object') settings.ui = {};
   const existing = settings.ui.statusLine;
-  const cmd = `node "${toPosix(path.join(EXT_DIR, 'scripts', 'statusline.js'))}"`;
+  const cmd = `node ${toPosix(path.join(EXT_DIR, 'scripts', 'statusline.js'))}`;
   const desired = {
     type: 'command',
     command: cmd,

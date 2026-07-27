@@ -135,7 +135,7 @@ function writeSettings(settings) {
 // 返回 true 表示 settings 已变更需写回；false 表示未改动（调用方据此跳过冗余写）。
 function mergeStatusLine(settings, dryRun) {
   const existing = settings.statusLine;
-  const cmd = `node "${toPosix(path.join(INSTALL_DIR, 'scripts', 'statusline.js'))}"`;
+  const cmd = `node ${toPosix(path.join(INSTALL_DIR, 'scripts', 'statusline.js'))}`;
   const desired = {
     type: 'command',
     command: cmd,
