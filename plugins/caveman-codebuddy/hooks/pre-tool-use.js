@@ -97,8 +97,41 @@ const DANGEROUS_PATTERNS = {
   ],
 };
 
+// PascalCase → snake_case 规范化映射。
+// 让无论 CodeBuddy 传 PascalCase 别名（Bash/Write/Edit）还是 snake_case
+// 原始 ID（run_shell_command/write_file/edit），都能命中同一份规则表。
+const TOOL_NAME_ALIASES = {
+  // 命令执行
+  'bash': 'Bash',
+  'runshellcommand': 'Bash',
+  'execute': 'Bash',
+  'terminal': 'Bash',
+  // 文件写入
+  'write': 'Write',
+  'writefile': 'Write',
+  'multiedit': 'Write',
+  // 文件编辑
+  'edit': 'Edit',
+};
+
+// 把任意形式的工具名规范化为 DANGEROUS_PATTERNS 的 key（PascalCase）。
+// 返回 null 表示该工具不在危险检查范围内（只读工具如 Read）。
+function normalizeToolName(toolName) {
+  if (!toolName) return null;
+  const lower = String(toolName).toLowerCase();
+  // 去除下划线后再查别名表（run_shell_command → runshellcommand → Bash）
+  const compact = lower.replace(/_/g, '');
+  if (TOOL_NAME_ALIASES[compact]) return TOOL_NAME_ALIASES[compact];
+  if (TOOL_NAME_ALIASES[lower]) return TOOL_NAME_ALIASES[lower];
+  // 直接就是 PascalCase key（大小写不匹配时先转小再首字母大写）
+  if (DANGEROUS_PATTERNS[toolName]) return toolName;
+  return null;
+}
+
 function checkDangerous(toolName, toolInput) {
-  const patterns = DANGEROUS_PATTERNS[toolName];
+  const key = normalizeToolName(toolName);
+  if (!key) return null;
+  const patterns = DANGEROUS_PATTERNS[key];
   if (!patterns) return null;
 
   // Stringify the input so patterns can match across fields uniformly.
@@ -159,7 +192,7 @@ async function main() {
   }
 
   // Caveman-mode-aware verbosity nudge (informational stderr only, does not block).
-  if (toolName === 'Write' && isCavemanActive()) {
+  if (normalizeToolName(toolName) === 'Write' && isCavemanActive()) {
     const content = (toolInput && toolInput.content) || '';
     if (content.length > 500 && !content.includes('\n') && !content.includes('```')) {
       process.stderr.write(`[caveman] PreToolUse: ${toolName} — long content, caveman mode active\n`);

@@ -18,7 +18,7 @@
 //   - User display preferences via ~/.caveman/config.json (statusline section)
 //   - Git branch via `git -C <cwd> branch --show-current`
 //   - Working directory basename from stdin's cwd field
-//   - Cost from stdin's cost field (defensive, may be absent)
+//   - Cost from stdin's cost.total_cost_usd (object, defensive, may be absent)
 //   - Context window from stdin's context_window/metrics (defensive, may be absent)
 //
 // Agent-isolated: data stored under ~/.caveman/qwen/ so multiple agents running
@@ -191,7 +191,8 @@ async function main() {
   const modelName = input.model?.display_name || input.model?.id || '';
   const snapshot = getSessionSnapshot();
 
-  const cost = typeof input.cost === 'number' ? input.cost : null;
+  // Cost is an object { total_cost_usd, ... } per the statusline contract.
+  const cost = input.cost?.total_cost_usd || null;
   const ctxWindow = input.context_window || input.metrics?.context_window || null;
   const ctxUsed = input.metrics?.total_tokens || null;
 
