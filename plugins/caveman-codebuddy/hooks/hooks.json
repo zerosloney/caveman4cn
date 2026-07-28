@@ -56,6 +56,34 @@
         ]
       }
     ],
+    "PostToolUse": [
+      {
+        "matcher": "Bash|Write|Edit",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node \"${CODEBUDDY_PLUGIN_ROOT}/hooks/post-tool-use.js\"",
+            "description": "Warn when a tool returns a large response",
+            "timeout": 5,
+            "statusMessage": "Checking tool response size…"
+          }
+        ]
+      }
+    ],
+    "PostToolUseFailure": [
+      {
+        "matcher": "Bash|Write|Edit",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node \"${CODEBUDDY_PLUGIN_ROOT}/hooks/post-tool-use-failure.js\"",
+            "description": "Provide compressed recovery advice on tool failure",
+            "timeout": 5,
+            "statusMessage": "Analyzing tool failure…"
+          }
+        ]
+      }
+    ],
     "Stop": [
       {
         "hooks": [
