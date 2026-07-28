@@ -1,32 +1,11 @@
 #!/usr/bin/env node
 // caveman — Qwen Code PostToolUse hook
-// Tracks tool usage by appending to ~/.caveman/tool-usage-qwen.log. This log is
-// diagnostic-only (manual inspection) — /caveman-stats reads Qwen transcripts
-// directly via caveman-stats.js, not this file. Kept for future tooling/debug.
+// Injects a brief note when a tool returns an unusually large response.
 //
 // Qwen Code contract:
 //   - stdin: JSON { hook_event_name, tool_name, tool_response, ... }
 //   - stdout: JSON. additionalContext is the only recognized key for injection.
 //   - Emit {} when there's nothing to inject.
-
-const path = require('path');
-const fs = require('fs');
-
-function logStats(toolName, toolResponse) {
-  // Append to a local stats log for the caveman-stats command
-  try {
-    const dataDir = process.env.QWEN_PLUGIN_DATA || path.join(process.env.HOME || process.env.USERPROFILE || '.', '.caveman');
-    if (!fs.existsSync(dataDir)) fs.mkdirSync(dataDir, { recursive: true });
-
-    const logFile = path.join(dataDir, 'tool-usage-qwen.log');
-    const entry = JSON.stringify({
-      ts: new Date().toISOString(),
-      tool: toolName,
-      size: JSON.stringify(toolResponse || '').length,
-    });
-    fs.appendFileSync(logFile, entry + '\n');
-  } catch {}
-}
 
 async function main() {
   let raw = '';
@@ -42,9 +21,6 @@ async function main() {
   }
   const toolName = input.tool_name || '';
   const toolResponse = input.tool_response || {};
-
-  // Log tool usage for stats
-  logStats(toolName, toolResponse);
 
   // Provide context about the tool result only when noteworthy
   let additionalContext = '';

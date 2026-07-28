@@ -36,7 +36,7 @@ const ZCODE_PLUGIN_DIR = path.join(
 );
 
 const PLUGIN_ROOT = path.join(
-  ZCODE_PLUGIN_DIR, 'cache', MARKETPLACE, `${PLUGIN_NAME}\\${PLUGIN_VERSION}`
+  ZCODE_PLUGIN_DIR, 'cache', MARKETPLACE, PLUGIN_NAME, PLUGIN_VERSION
 );
 
 const MARKETPLACE_FILE = path.join(
