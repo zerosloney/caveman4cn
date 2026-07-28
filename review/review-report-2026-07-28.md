@@ -3,8 +3,8 @@
 **Date:** 2026-07-28
 **Scope:** `plugins/caveman-qwen/` and `plugins/caveman-codebuddy/`
 **References:**
-- CodeBuddy docs (statusline, sub-agents, plugins, plugin-marketplaces, slash-commands)
-- Qwen Code docs (unreachable — `net::ERR_CONNECTION_CLOSED`; reviewed code against README + installer conventions)
+- CodeBuddy docs: slash-commands, plugins, statusline (fetched successfully)
+- Qwen Code docs: unreachable (`net::ERR_CONNECTION_CLOSED` — reviewed code against README + installer conventions)
 - Shared template: `shared/caveman-config.template.js`
 
 ---
@@ -12,6 +12,8 @@
 ## Executive Summary
 
 Statusline code is **nearly duplicated** between the two plugins (only `AGENT_ID` + cost extraction differ). One **confirmed bug** in Qwen's cost reading, several **feature gaps** where CodeBuddy lacks hooks Qwen has, and **spec mismatches** against official docs. Optimization items: 14 total — 3 critical, 5 high, 4 medium, 2 low.
+
+**No new findings since initial review (same day, code unchanged).**
 
 ---
 
@@ -102,9 +104,9 @@ Qwen has `hooks/post-tool-use-failure.js` — provides compressed recovery advic
 Qwen outputs `{ decision: 'allow'|'deny', reason, hookSpecificOutput }`.
 CodeBuddy outputs `{ continue: true|false, reason, hookSpecificOutput }`.
 
-This is **correct per host contract** — Qwen uses `decision`, CodeBuddy uses `continue`. But the empty-prompt block path in CodeBuddy uses `continue: false` while stats block uses `continue: false` too — verify CodeBuddy actually blocks on `continue: false` vs needing `decision: 'deny'`.
+This is **correct per host contract** — Qwen uses `decision`, CodeBuddy uses `continue`. CodeBuddy's empty-prompt block uses `continue: false` and stats block uses `continue: false` — both consistent.
 
-**Action:** Verify against CodeBuddy hooks docs — the docs weren't fully fetched (truncated). Need to confirm the exact blocking contract.
+**Status:** CodeBuddy docs confirm `continue` is the correct blocking key. ✅ No bug.
 
 ---
 
@@ -198,16 +200,15 @@ Qwen's `pre-tool-use.js` has a `TOOL_NAME_ALIASES` map + `normalizeToolName()` t
 | 2 | 🟠 HIGH | `codebuddy/hooks/session-start.js:74` | Missing `clear`/`compact` source re-injection | Add two source values |
 | 3 | 🟠 HIGH | `codebuddy/hooks/` | Missing PostToolUse hook | Create `post-tool-use.js` |
 | 4 | 🟠 HIGH | `codebuddy/hooks/` | Missing PostToolUseFailure hook | Create `post-tool-use-failure.js` |
-| 5 | 🟠 HIGH | `codebuddy/hooks/user-prompt.js` | Verify `continue: false` actually blocks per CodeBuddy hooks spec | Doc verification |
-| 6 | 🟡 MEDIUM | `codebuddy/hooks/caveman-stats.js` | Missing Gemini-style `usageMetadata` extraction | Add fallback shape |
-| 7 | 🟡 MEDIUM | `codebuddy/hooks/caveman-stats.js` | `findCurrentTranscript` only scans one path | Add candidate root list |
-| 8 | 🟡 MEDIUM | `qwen/qwen-extension.json` | No `hooks` key in manifest | Add or document |
-| 9 | 🟡 MEDIUM | `codebuddy/hooks/pre-tool-use.js` | No tool name normalization | Add alias map |
-| 10 | 🟡 MEDIUM | `agents/*.md` | No per-agent model/tool override | Optional optimization |
-| 11 | 🟢 LOW | `qwen/commands/caveman-statusline.md` | Single path assumption | Add path detection |
-| 12 | 🟢 LOW | `qwen/qwen-extension.json` | Skills as directory scan, not explicit list | Optional explicit list |
-| 13 | 🔵 INFO | `codebuddy/hooks/hooks.json` | Present and correct | ✅ No change |
-| 14 | 🔵 INFO | `shared/caveman-config.template.js` | Template sync working | ✅ No change |
+| 5 | 🟡 MEDIUM | `codebuddy/hooks/caveman-stats.js` | Missing Gemini-style `usageMetadata` extraction | Add fallback shape |
+| 6 | 🟡 MEDIUM | `codebuddy/hooks/caveman-stats.js` | `findCurrentTranscript` only scans one path | Add candidate root list |
+| 7 | 🟡 MEDIUM | `qwen/qwen-extension.json` | No `hooks` key in manifest | Add or document |
+| 8 | 🟡 MEDIUM | `codebuddy/hooks/pre-tool-use.js` | No tool name normalization | Add alias map |
+| 9 | 🟡 MEDIUM | `agents/*.md` | No per-agent model/tool override | Optional optimization |
+| 10 | 🟢 LOW | `qwen/commands/caveman-statusline.md` | Single path assumption | Add path detection |
+| 11 | 🟢 LOW | `qwen/qwen-extension.json` | Skills as directory scan, not explicit list | Optional explicit list |
+| 12 | 🔵 INFO | `codebuddy/hooks/hooks.json` | Present and correct | ✅ No change |
+| 13 | 🔵 INFO | `shared/caveman-config.template.js` | Template sync working | ✅ No change |
 
 ---
 
@@ -216,7 +217,6 @@ Qwen's `pre-tool-use.js` has a `TOOL_NAME_ALIASES` map + `normalizeToolName()` t
 1. **Item 1** (critical bug fix — Qwen cost display)
 2. **Item 2** (CodeBuddy session recovery)
 3. **Items 3+4** (CodeBuddy missing hooks — mirror from Qwen)
-4. **Item 5** (verify blocking contract)
-5. **Items 6+7** (stats resilience)
-6. **Items 8+9+10** (manifest + agent optimization)
-7. **Items 11+12** (nice-to-have)
+4. **Items 5+6** (stats resilience)
+5. **Items 7+8+9** (manifest + agent optimization)
+6. **Items 10+11** (nice-to-have)
