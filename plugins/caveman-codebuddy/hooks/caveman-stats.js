@@ -16,13 +16,21 @@ const fs = require('fs');
 const path = require('path');
 const { getAgentDataDir, getAgentLifetimeFile, getAgentSnapshotFile } = require('./caveman-config');
 
-// CodeBuddy stores one JSONL transcript per session under
-// ~/.codebuddy/projects/<encoded-project>/<uuid>.jsonl
-const PROJECTS_DIR = path.join(
-  process.env.HOME || process.env.USERPROFILE || '.',
-  '.codebuddy',
-  'projects'
-);
+// CodeBuddy's primary transcript location (documented contract):
+//   ~/.codebuddy/projects/<encoded-project>/<uuid>.jsonl
+// Probe several candidate roots so stats keep working if CodeBuddy
+// relocates transcripts in a future update. First root that exists wins.
+function candidateRoots() {
+  const base = process.env.HOME || process.env.USERPROFILE || '.';
+  return [
+    path.join(base, '.codebuddy', 'projects'),
+    path.join(base, '.codebuddy', 'sessions'),
+    path.join(base, '.codebuddy', 'logs'),
+    path.join(base, '.codebuddy', 'transcripts'),
+    path.join(base, '.codebuddy', 'history'),
+    path.join(base, '.codebuddy'),
+  ];
+}
 
 // Per-agent data dir: ~/.caveman/codebuddy/
 const DATA_DIR = getAgentDataDir();
@@ -35,49 +43,39 @@ const BASELINE_OUTPUT_MULTIPLIER = 2.86; // verbose ≈ 2.86x caveman output
 
 /**
  * Find the "current" session transcript: the most recently modified non-empty
- * .jsonl across all project subdirectories under ~/.codebuddy/projects. Empty
- * (just-created) session files are skipped so /caveman-stats reports the last
- * real conversation, not a 0-byte stub.
+ * .jsonl across all candidate roots. Empty (just-created) session files are
+ * skipped so /caveman-stats reports the last real conversation, not a 0-byte stub.
  */
 function findCurrentTranscript() {
-  try {
-    const projects = fs
-      .readdirSync(PROJECTS_DIR, { withFileTypes: true })
-      .filter((e) => e.isDirectory());
-    let best = null;
-    for (const proj of projects) {
-      const projDir = path.join(PROJECTS_DIR, proj.name);
-      let entries;
-      try {
-        entries = fs.readdirSync(projDir, { withFileTypes: true });
-      } catch {
-        continue;
-      }
-      for (const e of entries) {
-        if (!e.isFile() || !e.name.endsWith('.jsonl')) continue;
-        const full = path.join(projDir, e.name);
-        try {
-          const stat = fs.statSync(full);
-          // Skip empty files — they're freshly-created session stubs with no
-          // usage records yet.
-          if (stat.size === 0) continue;
-          if (!best || stat.mtimeMs > best.mtime) best = { full, mtime: stat.mtimeMs };
-        } catch {}
-      }
+  let best = null;
+  for (const root of candidateRoots()) {
+    let entries;
+    try {
+      entries = fs.readdirSync(root, { withFileTypes: true });
+    } catch {
+      continue;
     }
-    return best ? best.full : null;
-  } catch {
-    return null;
+    for (const e of entries) {
+      if (!e.isFile() || !e.name.endsWith('.jsonl')) continue;
+      const full = path.join(root, e.name);
+      try {
+        const stat = fs.statSync(full);
+        // Skip empty files — freshly-created session stubs with no usage records.
+        if (stat.size === 0) continue;
+        if (!best || stat.mtimeMs > best.mtime) best = { full, mtime: stat.mtimeMs };
+      } catch {}
+    }
   }
+  return best ? best.full : null;
 }
 
 /**
- * Enumerate all .jsonl transcripts. If projectDir omitted, walks ALL project
- * subdirectories (lifetime view).
+ * Enumerate all .jsonl transcripts. If projectDir omitted, walks ALL candidate
+ * roots (lifetime view).
  */
 function listTranscripts(projectDir) {
   const out = [];
-  const root = projectDir || PROJECTS_DIR;
+  const roots = projectDir ? [projectDir] : candidateRoots();
   try {
     const walk = (dir) => {
       for (const e of fs.readdirSync(dir, { withFileTypes: true })) {
@@ -86,7 +84,7 @@ function listTranscripts(projectDir) {
         else if (e.isFile() && e.name.endsWith('.jsonl')) out.push(full);
       }
     };
-    walk(root);
+    for (const r of roots) walk(r);
   } catch {}
   return out;
 }
@@ -104,6 +102,7 @@ function listTranscripts(projectDir) {
  *   2. { type: "model_complete", payload: { usage: { inputTokens, outputTokens, ... } } }                 (zcode-compat)
  *   3. { type: "assistant", message: { usage: {...} } }                                                  (Claude-compat)
  *   4. { usage: {...} } / { payload: { usage: {...} } }                                                  (top-level / wrapped)
+ *   5. { type: "assistant", usageMetadata: { promptTokenCount, candidatesTokenCount, ... } }             (Gemini-style)
  */
 function extractUsage(rec) {
   if (!rec) return null;
@@ -120,6 +119,8 @@ function extractUsage(rec) {
   candidates.push(rec.usage);
   if (rec.payload) candidates.push(rec.payload.usage);
   if (rec.providerData) candidates.push(rec.providerData.usage);
+  // Gemini / Qwen Code style: top-level usageMetadata (promptTokenCount, ...).
+  if (rec.usageMetadata) candidates.push(rec.usageMetadata);
 
   for (const u of candidates) {
     if (!u) continue;
@@ -141,6 +142,16 @@ function extractUsage(rec) {
         outputTokens: u.completion_tokens || 0,
         cacheReadTokens: pd.cached_tokens || u.prompt_cache_hit_tokens || 0,
         cacheWriteTokens: u.prompt_cache_write_tokens || 0,
+      };
+    }
+    // Gemini / Qwen Code style (usageMetadata):
+    //   promptTokenCount, candidatesTokenCount, cachedContentTokenCount, ...
+    if (u.promptTokenCount != null || u.candidatesTokenCount != null) {
+      return {
+        inputTokens: u.promptTokenCount || 0,
+        outputTokens: u.candidatesTokenCount || 0,
+        cacheReadTokens: u.cachedContentTokenCount || 0,
+        cacheWriteTokens: 0,
       };
     }
   }
@@ -316,7 +327,6 @@ function writeSessionSnapshot(stats) {
 }
 
 module.exports = {
-  PROJECTS_DIR,
   DATA_DIR,
   computeStats,
   formatStats,
