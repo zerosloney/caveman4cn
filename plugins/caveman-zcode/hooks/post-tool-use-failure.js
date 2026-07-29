@@ -20,7 +20,13 @@ async function main() {
     return;
   }
   const toolName = input.tool_name || '';
-  const error = input.error || 'unknown error';
+  // input.error may be a string or an object {message, stack} — normalize to string.
+  const rawError = input.error;
+  const error = rawError == null
+    ? 'unknown error'
+    : (typeof rawError === 'string'
+        ? rawError
+        : (rawError.message || JSON.stringify(rawError)));
   const isInterrupt = input.is_interrupt || false;
 
   // Build targeted recovery advice based on tool type
