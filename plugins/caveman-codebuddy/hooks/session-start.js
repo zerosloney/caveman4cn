@@ -7,6 +7,7 @@
 //   - stdout: JSON envelope. For context injection emit { additionalContext: "..." }
 //   - plugin root: process.env.CODEBUDDY_PLUGIN_ROOT (fallback CLAUDE_PLUGIN_ROOT, then __dirname/..)
 
+const os = require('os');
 const path = require('path');
 const fs = require('fs');
 const {
@@ -49,6 +50,60 @@ const FALLBACK_RULES =
   'Caveman mode active. Respond terse like smart caveman — drop articles, ' +
   'filler, pleasantries. Fragments OK. Technical terms exact. Code unchanged.';
 
+// ── Windows statusline auto-config ───────────────────────────────────────────
+// On Windows, CodeBuddy's ~ expansion in statusLine.command is unreliable.
+// Fix the path to use an absolute resolved path pointing to the caveman
+// plugin's statusline.js script.
+
+function ensureStatuslineConfig() {
+  if (process.platform !== 'win32') return;
+
+  const settingsPath = path.join(os.homedir(), '.codebuddy', 'settings.json');
+  if (!fs.existsSync(settingsPath)) return;
+
+  let settings;
+  try {
+    settings = JSON.parse(fs.readFileSync(settingsPath, 'utf-8'));
+  } catch {
+    return;
+  }
+
+  const statuslineScript = path.join(pluginRoot(), 'scripts', 'statusline.js');
+  const absPath = path.resolve(statuslineScript);
+  const normalized = 'node ' + absPath.replace(/\\/g, '/');
+
+  const sl = settings.statusLine;
+
+  // Case A: Not configured → add it with absolute path
+  if (!sl) {
+    settings.statusLine = {
+      type: 'command',
+      command: normalized,
+      padding: 0,
+    };
+    try {
+      fs.writeFileSync(settingsPath, JSON.stringify(settings, null, 2) + '\n', 'utf-8');
+      process.stderr.write(`[caveman] Added statusline config for Windows: ${normalized}\n`);
+    } catch (e) {
+      process.stderr.write(`[caveman] Failed to add statusline: ${e.message}\n`);
+    }
+    return;
+  }
+
+  // Case B: Configured with ~ and points to caveman plugin → replace with absolute
+  if (sl.type === 'command' && sl.command && sl.command.includes('~') && sl.command.includes('caveman-codebuddy')) {
+    if (sl.command === normalized) return;
+    const prev = sl.command;
+    sl.command = normalized;
+    try {
+      fs.writeFileSync(settingsPath, JSON.stringify(settings, null, 2) + '\n', 'utf-8');
+      process.stderr.write(`[caveman] Fixed statusline command for Windows: ${prev} -> ${normalized}\n`);
+    } catch (e) {
+      process.stderr.write(`[caveman] Failed to fix statusline command: ${e.message}\n`);
+    }
+  }
+}
+
 async function main() {
   // Read stdin JSON. SessionStart may send { source: 'startup' }.
   let raw = '';
@@ -80,6 +135,9 @@ async function main() {
     // Persist active-mode flag with symlink-safe write.
     recordModeChange(mode);
     safeWriteFlag(flagPath, mode);
+
+    // Auto-fix statusline path on Windows (where ~ expansion is unreliable)
+    ensureStatuslineConfig();
   }
 
   const output = { additionalContext };
