@@ -8,8 +8,9 @@
 // Qwen Code contract:
 //   - stdin: JSON { hook_event_name, prompt, ... }
 //   - stdout: JSON. To block a prompt: exit 2 with reason on stderr, OR emit
-//     { decision: "deny", reason, hookSpecificOutput: { additionalContext } }.
-//     To pass through with injected context: { decision: "allow", hookSpecificOutput: { additionalContext } }.
+//     { decision: "block", reason, hookSpecificOutput: { additionalContext } }.
+//     To pass through with injected context: omit decision and emit
+//     { hookSpecificOutput: { additionalContext } }.
 //
 // Responsibilities:
 //   - /caveman-stats [--share|--lifetime|--all|--since]  -> block, return stats
@@ -70,7 +71,7 @@ function handleStatsPrompt(input, prompt) {
   process.stderr.write(`[caveman] /caveman-stats (${lifetime ? 'lifetime' : 'session'})\n`);
 
   return {
-    decision: 'deny',
+    decision: 'block',
     reason: body,
     hookSpecificOutput: {
       hookEventName: input.hook_event_name || 'UserPromptSubmit',
@@ -155,9 +156,9 @@ async function main() {
   const prompt = (input.prompt || '').trim();
 
   // ── Empty prompt block ──────────────────────────────────────────────────
-  if (!prompt || prompt.length < 3) {
+  if (!prompt) {
     const output = {
-      decision: 'deny',
+      decision: 'block',
       reason: 'Empty prompt blocked. Provide a specific question.',
       hookSpecificOutput: {
         hookEventName: input.hook_event_name || 'UserPromptSubmit',
@@ -256,7 +257,6 @@ async function main() {
   }
 
   const output = {
-    decision: 'allow',
     hookSpecificOutput: {
       hookEventName: input.hook_event_name || 'UserPromptSubmit',
       additionalContext,

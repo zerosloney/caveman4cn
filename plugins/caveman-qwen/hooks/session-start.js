@@ -4,7 +4,8 @@
 //
 // Qwen Code contract:
 //   - stdin: JSON { hook_event_name, source, ... }
-//   - stdout: JSON. For context injection emit { additionalContext: "..." }
+//   - stdout: JSON. For context injection emit
+//     { hookSpecificOutput: { hookEventName: "SessionStart", additionalContext: "..." } }
 //   - extension root: ${extensionPath} at install time (installer writes the
 //     absolute path into ~/.qwen/settings.json), but the hook process itself
 //     receives no env var — resolve from this script's location as fallback.
@@ -86,7 +87,12 @@ async function main() {
     safeWriteFlag(flagPath, mode);
   }
 
-  const output = { additionalContext };
+  const output = {
+    hookSpecificOutput: {
+      hookEventName: input.hook_event_name || 'SessionStart',
+      additionalContext,
+    },
+  };
   process.stderr.write(`[caveman] SessionStart: ${mode} mode\n`);
   process.stdout.write(JSON.stringify(output));
 }
@@ -94,5 +100,12 @@ async function main() {
 main().catch((err) => {
   process.stderr.write(`[caveman] SessionStart error: ${err.message}\n`);
   // Never block session start on a hook error — emit empty context and exit 0.
-  process.stdout.write(JSON.stringify({ additionalContext: '' }));
+  process.stdout.write(
+    JSON.stringify({
+      hookSpecificOutput: {
+        hookEventName: 'SessionStart',
+        additionalContext: '',
+      },
+    })
+  );
 });
