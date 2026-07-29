@@ -1,0 +1,29 @@
+{
+  "name": "caveman-qoder",
+  "displayName": "Caveman for Qoder",
+  "version": "0.0.1",
+  "description": "Caveman workflow plugin for Qoder CLI.",
+  "author": {
+    "name": "caveman4cn"
+  },
+  "keywords": [
+    "qoder-plugin",
+    "caveman"
+  ],
+  "category": "Coding",
+  "tags": [
+    "caveman",
+    "workflow"
+  ],
+  "skills": [
+    "./skills/caveman",
+    "./skills/caveman-commit",
+    "./skills/caveman-compress",
+    "./skills/caveman-help",
+    "./skills/caveman-review",
+    "./skills/caveman-stats",
+    "./skills/cavecrew"
+  ],
+  "marketplaceName": "local",
+  "defaultEnabled": true
+}
