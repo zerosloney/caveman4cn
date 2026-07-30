@@ -15,17 +15,5 @@
     "brevity",
     "qoder"
   ],
-  "category": "Productivity",
-  "commands": "commands",
-  "agents": "agents",
-  "skills": [
-    "skills/caveman",
-    "skills/caveman-commit",
-    "skills/caveman-compress",
-    "skills/caveman-help",
-    "skills/caveman-review",
-    "skills/caveman-stats",
-    "skills/cavecrew"
-  ],
-  "hooks": "hooks/hooks.json"
+  "category": "Productivity"
 }
