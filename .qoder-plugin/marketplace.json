@@ -1,0 +1,24 @@
+{
+  "name": "master0071",
+  "description": "Caveman plugin marketplace (qoder) — ultra-compressed communication mode. Add this repo in Qoder CLI to get caveman-qoder.",
+  "owner": {
+    "name": "master0071",
+    "email": "master0071@users.noreply.github.com"
+  },
+  "plugins": [
+    {
+      "name": "caveman-qoder",
+      "description": "Ultra-compressed communication mode for Qoder. Cut filler. Keep technical accuracy. Supports lite, full, ultra, wenyan intensity levels.",
+      "version": "0.1.0",
+      "source": "./plugins/caveman-qoder",
+      "category": "productivity",
+      "author": {
+        "name": "zerosloney",
+        "url": "https://github.com/zerosloney/caveman4cn"
+      },
+      "homepage": "https://github.com/zerosloney/caveman4cn",
+      "license": "MIT",
+      "keywords": ["productivity", "communication", "brevity", "qoder"]
+    }
+  ]
+}

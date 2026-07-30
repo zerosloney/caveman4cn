@@ -22,9 +22,9 @@
 | CodeBuddy | `.codebuddy-plugin/marketplace.json` + `plugins/caveman-codebuddy/.codebuddy-plugin/plugin.json` | `caveman-codebuddy` |
 | Trae IDE | 安装器铺资产到 `~/.trae-cn/`（无市场清单概念） | `caveman-trae` |
 | Qwen Code | 安装器铺扩展到 `~/.qwen/extensions/caveman-qwen/` + 合并 `~/.qwen/settings.json` | `caveman-qwen` |
-| Qoder | 安装器铺插件到 `~/.qoder/plugins/caveman-qoder/` + 合并 `~/.qoder/settings.json` | `caveman-qoder` |
+| Qoder | `.qoder-plugin/marketplace.json` + `plugins/caveman-qoder/.qoder-plugin/plugin.json`；安装器铺插件到 `~/.qoder/plugins/caveman-qoder/` + 合并 `~/.qoder/settings.json` | `caveman-qoder` |
 
-ZCode 与 CodeBuddy 靠各自清单目录约定区分；Trae 没有 marketplace/plugin.json 概念，由安装器把 skills/commands/hooks/rules 铺到 `~/.trae-cn/` 全局约定位置；Qwen Code 由安装器把扩展铺到 `~/.qwen/extensions/caveman-qwen/`，并把钩子与状态行合并进 `~/.qwen/settings.json`；Qoder 由安装器把插件铺到 `~/.qoder/plugins/caveman-qoder/`（含 `.qoder-plugin/plugin.json` 清单），并把钩子合并进 `~/.qoder/settings.json`（双保险：也支持 `qodercli plugins install` 正式登记）。
+ZCode 与 CodeBuddy 靠各自清单目录约定区分；Trae 没有 marketplace/plugin.json 概念，由安装器把 skills/commands/hooks/rules 铺到 `~/.trae-cn/` 全局约定位置；Qwen Code 由安装器把扩展铺到 `~/.qwen/extensions/caveman-qwen/`，并把钩子与状态行合并进 `~/.qwen/settings.json`；Qoder 由安装器把插件铺到 `~/.qoder/plugins/caveman-qoder/`（含 `.qoder-plugin/plugin.json` 清单），并把钩子合并进 `~/.qoder/settings.json`（双保险：也支持 `qodercli plugins marketplace add` + `qodercli plugins install` 正式登记，市场清单为根 `.qoder-plugin/marketplace.json`）。
 
 ## 目录结构
 
@@ -33,6 +33,7 @@ caveman4cn/
 ├── marketplace.json                     # ZCode 根清单 → caveman-zcode
 ├── qwen-extension.json                  # Qwen Code 根级扩展清单（Qwen 约定：根目录）
 ├── .codebuddy-plugin/marketplace.json   # CodeBuddy 清单 → caveman-codebuddy
+├── .qoder-plugin/marketplace.json       # Qoder 市场清单 → caveman-qoder
 ├── plugins/
 │   ├── caveman-zcode/                   # ZCode 插件（Node hooks）
 │   │   └── .zcode-plugin/plugin.json

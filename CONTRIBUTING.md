@@ -60,7 +60,7 @@ node -c plugins/caveman-zcode/hooks/*.js
 node -c plugins/caveman-trae/hooks/*.js
 
 # 校验 JSON 配置
-node -e "['.codebuddy-plugin/marketplace.json','marketplace.json','plugins/caveman-codebuddy/.codebuddy-plugin/plugin.json','plugins/caveman-zcode/.zcode-plugin/plugin.json','plugins/caveman-trae/.trae-plugin/plugin.json','plugins/caveman-codebuddy/hooks/hooks.json','plugins/caveman-zcode/hooks/hooks.json','plugins/caveman-trae/hooks/hooks.json'].forEach(f=>JSON.parse(require('fs').readFileSync(f,'utf8'))); console.log('all JSON valid')"
+node -e "['.codebuddy-plugin/marketplace.json','.qoder-plugin/marketplace.json','marketplace.json','plugins/caveman-codebuddy/.codebuddy-plugin/plugin.json','plugins/caveman-zcode/.zcode-plugin/plugin.json','plugins/caveman-trae/.trae-plugin/plugin.json','plugins/caveman-codebuddy/hooks/hooks.json','plugins/caveman-zcode/hooks/hooks.json','plugins/caveman-trae/hooks/hooks.json'].forEach(f=>JSON.parse(require('fs').readFileSync(f,'utf8'))); console.log('all JSON valid')"
 
 # 模拟一个 hook（CodeBuddy）
 echo '{"hook_event_name":"UserPromptSubmit","prompt":"/caveman-stats"}' | node plugins/caveman-codebuddy/hooks/caveman-mode-tracker.js
