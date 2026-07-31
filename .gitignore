@@ -19,6 +19,7 @@ context/refs/research-brief-caveman-code-efficiency.md
 # Host-local session artifacts
 .zcode/
 .claude/worktrees/
+.plugins-cache.json
 
 # Build artifacts
 dist/*

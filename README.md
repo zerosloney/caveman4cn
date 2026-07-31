@@ -18,7 +18,7 @@
 
 | 宿主 | 发现机制 | 加载的插件 |
 |------|---------|-----------|
-| ZCode | 仓库根 `marketplace.json` + `plugins/caveman/.zcode-plugin/plugin.json` | `caveman` |
+| ZCode | `.zcode-plugin/marketplace.json` + `plugins/caveman/.zcode-plugin/plugin.json` | `caveman` |
 | CodeBuddy | `.codebuddy-plugin/marketplace.json` + `plugins/caveman/.codebuddy-plugin/plugin.json` | `caveman` |
 | Trae IDE | 安装器铺资产到 `~/.trae-cn/`（无市场清单概念） | `caveman` |
 | Qwen Code | 安装器铺扩展到 `~/.qwen/extensions/caveman/` + 合并 `~/.qwen/settings.json` | `caveman` |
@@ -30,10 +30,10 @@ ZCode 与 CodeBuddy 靠各自清单目录约定区分；Trae 没有 marketplace/
 
 ```
 caveman4cn/
-├── marketplace.json                     # ZCode 根清单 → caveman-zcode
+├── .zcode-plugin/marketplace.json       # ZCode 市场清单 → caveman
+├── .codebuddy-plugin/marketplace.json   # CodeBuddy 市场清单 → caveman
+├── .qoder-plugin/marketplace.json       # Qoder 市场清单 → caveman
 ├── qwen-extension.json                  # Qwen Code 根级扩展清单（Qwen 约定：根目录）
-├── .codebuddy-plugin/marketplace.json   # CodeBuddy 清单 → caveman-codebuddy
-├── .qoder-plugin/marketplace.json       # Qoder 市场清单 → caveman-qoder
 ├── plugins/
 │   └── caveman/                         # 唯一公共插件源码
 │       ├── .zcode-plugin/plugin.json
