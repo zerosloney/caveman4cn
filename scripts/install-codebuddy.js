@@ -2,9 +2,9 @@
 // install-codebuddy.js — Install caveman plugin for CodeBuddy
 //
 // 用法：
-//   npx @master0071/caveman-codebuddy              # 安装
-//   npx @master0071/caveman-codebuddy --uninstall   # 卸载
-//   npx @master0071/caveman-codebuddy --dry-run     # 预览
+//   npx -p @master0071/caveman4cn caveman-codebuddy              # 安装
+//   npx -p @master0071/caveman4cn caveman-codebuddy --uninstall   # 卸载
+//   npx -p @master0071/caveman4cn caveman-codebuddy --dry-run     # 预览
 //   node scripts/install-codebuddy.js               # 本地安装
 //
 // 将插件复制到 ~/.codebuddy/plugins/caveman/

@@ -2,9 +2,9 @@
 // install-zcode.js — Install caveman plugin for ZCode
 //
 // 用法：
-//   npx @master0071/caveman-zcode              # 安装
-//   npx @master0071/caveman-zcode --uninstall   # 卸载
-//   npx @master0071/caveman-zcode --dry-run     # 预览
+//   npx -p @master0071/caveman4cn caveman-zcode              # 安装
+//   npx -p @master0071/caveman4cn caveman-zcode --uninstall   # 卸载
+//   npx -p @master0071/caveman4cn caveman-zcode --dry-run     # 预览
 //   node scripts/install-zcode.js              # 本地安装
 //
 // 将 plugins/caveman/ 安装到 ZCode 插件系统：
