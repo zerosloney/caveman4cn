@@ -7,8 +7,8 @@
 //   node scripts/install-qoder.js --dry-run     # 预览
 //   npx @master0071/caveman4cn                  # postinstall 链中运行
 //
-// 将 plugins/caveman-qoder/ 安装到 Qoder：
-//   ~/.qoder/plugins/caveman-qoder/  → 插件文件（含 .qoder-plugin/plugin.json）
+// 将 plugins/caveman/ 安装到 Qoder：
+//   ~/.qoder/plugins/caveman/  → 插件文件（含 .qoder-plugin/plugin.json）
 //   ~/.qoder/settings.json           → 合并 hooks（5 事件，绝对路径）
 //
 // 双保险策略：Qoder 的插件级 hooks/hooks.json 用 ${QODER_PLUGIN_ROOT} 变量，
@@ -24,7 +24,7 @@ const fs = require('fs');
 const path = require('path');
 const os = require('os');
 
-const PLUGIN_NAME = 'caveman-qoder';
+const PLUGIN_NAME = 'caveman';
 const PLUGIN_VERSION = '0.1.0';
 
 const QODER_HOME = path.join(
@@ -35,8 +35,10 @@ const QODER_HOME = path.join(
 const PLUGIN_DIR = path.join(QODER_HOME, 'plugins', PLUGIN_NAME);
 const SETTINGS_FILE = path.join(QODER_HOME, 'settings.json');
 
-// 源文件：repo 里的 plugins/caveman-qoder/ 目录
-const SRC_DIR = path.join(__dirname, '..', 'plugins', 'caveman-qoder');
+// 源文件：repo 里的 plugins/caveman/ 目录
+const SRC_DIR = path.join(__dirname, '..', 'plugins', 'caveman');
+const HOOKS_SRC_DIR = path.join(SRC_DIR, 'hooks', 'qoder');
+const HOOKS_INSTALL_DIR = path.join(PLUGIN_DIR, 'hooks');
 
 const SUBDIRS = [
   '.qoder-plugin', 'skills', 'commands', 'agents',
@@ -176,13 +178,13 @@ function toPosix(p) {
 // Qoder 在 Windows 下解析带引号的绝对路径时有 bug——拼接工作目录导致路径错误。
 // POSIX 正斜杠路径无空格，裸写即可。
 function hookCommand(scriptName) {
-  const scriptPath = toPosix(path.join(PLUGIN_DIR, 'hooks', scriptName));
+  const scriptPath = toPosix(path.join(HOOKS_INSTALL_DIR, scriptName));
   return `node ${scriptPath}`;
 }
 
 function isCavemanHook(hookEntry) {
   const cmd = (hookEntry && hookEntry.command) || '';
-  return typeof cmd === 'string' && cmd.includes('/caveman-qoder/hooks/');
+  return typeof cmd === 'string' && /\/caveman(?:-qoder)?\/hooks\//.test(cmd);
 }
 
 // ── settings.json 读写 ────────────────────────────────────────────────
@@ -285,8 +287,8 @@ function install(dryRun) {
   // 2. 复制插件文件
   console.log(`→ 复制插件文件到 ${PLUGIN_DIR}`);
   for (const sub of SUBDIRS) {
-    const src = path.join(SRC_DIR, sub);
-    const dest = path.join(PLUGIN_DIR, sub);
+    const src = sub === 'hooks' ? HOOKS_SRC_DIR : path.join(SRC_DIR, sub);
+    const dest = sub === 'hooks' ? HOOKS_INSTALL_DIR : path.join(PLUGIN_DIR, sub);
     if (!fs.existsSync(src)) {
       console.warn(`  跳过 ${sub}（源目录不存在）`);
       continue;
@@ -315,7 +317,7 @@ function install(dryRun) {
   // 4. 提示可选的 qodercli 登记
   console.log('\nℹ️  可选：让 Qoder 正式识别本插件（启用插件级 hooks.json 的变量注入）：');
   console.log('    qodercli plugins marketplace add <repo-or-dir>');
-  console.log('    qodercli plugins install caveman-qoder');
+  console.log('    qodercli plugins install caveman');
   if (hasQoderCli()) {
     console.log('    （检测到 qodercli 已在 PATH）');
   } else {

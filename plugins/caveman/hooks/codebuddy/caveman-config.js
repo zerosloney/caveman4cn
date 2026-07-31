@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-// caveman — shared configuration resolver ({{AGENT_LABEL}} build)
+// caveman — shared configuration resolver (CodeBuddy build)
 //
 // ⚠️ TEMPLATE FILE — do not edit plugin copies directly.
 // This is the single source of truth. Run `npm run sync:shared` to regenerate
@@ -40,7 +40,7 @@ const VALID_MODES = [
 // ~/.caveman/<agent>/ so multiple agents running on the same machine never
 // clobber each other's mode flag, mode-log, or lifetime-saved badge. The agent
 // id is hardcoded per build — every plugin copy knows which agent it belongs to.
-const AGENT_ID = '{{AGENT_ID}}';
+const AGENT_ID = 'codebuddy';
 
 function homeDir() {
   return process.env.HOME || process.env.USERPROFILE || '.';
@@ -48,7 +48,7 @@ function homeDir() {
 
 // Root caveman data dir (shared across agents for config.json only).
 function getCavemanRoot() {
-  return {{#ZCODE_ENV}}process.env.ZCODE_PLUGIN_DATA || {{/ZCODE_ENV}}path.join(homeDir(), '.caveman');
+  return path.join(homeDir(), '.caveman');
 }
 
 // Per-agent data dir: ~/.caveman/<agent>/

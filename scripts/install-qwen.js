@@ -7,8 +7,8 @@
 //   node scripts/install-qwen.js --dry-run     # 预览
 //   npx @master0071/caveman4cn                 # postinstall 链中运行
 //
-// 将 plugins/caveman-qwen/ 安装到 Qwen Code 扩展系统：
-//   ~/.qwen/extensions/caveman-qwen/  → 扩展文件（无版本号子目录）
+// 将 plugins/caveman/ 安装到 Qwen Code 扩展系统：
+//   ~/.qwen/extensions/caveman/  → 扩展文件（无版本号子目录）
 //   ~/.qwen/settings.json             → 合并 hooks（5 事件）+ ui.statusLine
 //
 // Qwen Code 没有 `${PLUGIN_ROOT}` 风格的钩子级环境变量注入；本安装器把绝对
@@ -21,7 +21,7 @@ const fs = require('fs');
 const path = require('path');
 const os = require('os');
 
-const PLUGIN_NAME = 'caveman-qwen';
+const PLUGIN_NAME = 'caveman';
 const PLUGIN_VERSION = '0.1.0';
 
 const QWEN_HOME = path.join(
@@ -32,8 +32,10 @@ const QWEN_HOME = path.join(
 const EXT_DIR = path.join(QWEN_HOME, 'extensions', PLUGIN_NAME);
 const SETTINGS_FILE = path.join(QWEN_HOME, 'settings.json');
 
-// 源文件：repo 里的 plugins/caveman-qwen/ 目录
-const SRC_DIR = path.join(__dirname, '..', 'plugins', 'caveman-qwen');
+// 源文件：repo 里的 plugins/caveman/ 目录
+const SRC_DIR = path.join(__dirname, '..', 'plugins', 'caveman');
+const HOOKS_SRC_DIR = path.join(SRC_DIR, 'hooks', 'qwen');
+const HOOKS_INSTALL_DIR = path.join(EXT_DIR, 'hooks', 'qwen');
 
 const SUBDIRS = [
   'skills', 'commands', 'agents',
@@ -163,14 +165,14 @@ function toPosix(p) {
 // 路径和当前工作目录拼接（如 `D:\cwd\"C:/abs/path.js"`），导致文件找不到。
 // POSIX 正斜杠路径无空格，裸写即可，Windows 下 node 同样能解析。
 function hookCommand(scriptName) {
-  const scriptPath = toPosix(path.join(EXT_DIR, 'hooks', scriptName));
+  const scriptPath = toPosix(path.join(HOOKS_INSTALL_DIR, scriptName));
   return `node ${scriptPath}`;
 }
 
 // 判断一个 hook entry 的 command 是否指向本扩展（用于去重）。
 function isCavemanHook(hookEntry) {
   const cmd = (hookEntry && hookEntry.command) || '';
-  return typeof cmd === 'string' && cmd.includes('/caveman-qwen/hooks/');
+  return typeof cmd === 'string' && /\/caveman(?:-qwen)?\/hooks\//.test(cmd);
 }
 
 // ── settings.json 读写 ────────────────────────────────────────────────
@@ -284,7 +286,7 @@ function mergeStatusLine(settings, dryRun) {
 
 function isCavemanStatusLine(sl) {
   const cmd = (sl && sl.command) || '';
-  return typeof cmd === 'string' && cmd.includes('/caveman-qwen/scripts/statusline.js');
+  return typeof cmd === 'string' && /caveman(?:-qwen)?\/scripts\/statusline\.js/.test(cmd);
 }
 
 function stripStatusLine(settings) {
@@ -314,8 +316,8 @@ function install(dryRun) {
   // 2. 复制扩展文件
   console.log(`→ 复制扩展文件到 ${EXT_DIR}`);
   for (const sub of SUBDIRS) {
-    const src = path.join(SRC_DIR, sub);
-    const dest = path.join(EXT_DIR, sub);
+    const src = sub === 'hooks' ? HOOKS_SRC_DIR : path.join(SRC_DIR, sub);
+    const dest = sub === 'hooks' ? HOOKS_INSTALL_DIR : path.join(EXT_DIR, sub);
     if (!fs.existsSync(src)) {
       console.warn(`  跳过 ${sub}（源目录不存在）`);
       continue;
@@ -331,8 +333,8 @@ function install(dryRun) {
 
   // 复制 caveman-stats.js 到 tools/ 目录（工具注册引用 tools/caveman-stats.js，
   // 但源文件在 hooks/ 目录，需额外复制一份到 tools/ 让工具能找到）。
-  const statsSrc = path.join(SRC_DIR, 'hooks', 'caveman-stats.js');
-  const statsDest = path.join(EXT_DIR, 'tools', 'caveman-stats.js');
+  const statsSrc = path.join(HOOKS_SRC_DIR, 'caveman-stats.js');
+      const statsDest = path.join(EXT_DIR, 'tools', 'caveman-stats.js');
   if (fs.existsSync(statsSrc)) {
     if (!dryRun) {
       fs.mkdirSync(path.dirname(statsDest), { recursive: true });

@@ -7,7 +7,7 @@
 //   npx @master0071/caveman-codebuddy --dry-run     # 预览
 //   node scripts/install-codebuddy.js               # 本地安装
 //
-// 将插件复制到 ~/.codebuddy/plugins/caveman-codebuddy/
+// 将插件复制到 ~/.codebuddy/plugins/caveman/
 // 并通过 CodeBuddy 市场系统注册，不依赖项目源目录。
 
 'use strict';
@@ -16,7 +16,7 @@ const fs = require('fs');
 const path = require('path');
 const { execSync } = require('child_process');
 
-const PLUGIN_NAME = 'caveman-codebuddy';
+const PLUGIN_NAME = 'caveman';
 const MARKETPLACE_NAME = 'master0071';
 const PLUGIN_VERSION = '0.1.0';
 
@@ -28,7 +28,8 @@ const INSTALL_DIR = path.join(CODEBUDDY_PLUGIN_DIR, PLUGIN_NAME);
 const SETTINGS_FILE = path.join(CODEBUDDY_HOME, 'settings.json');
 
 // 源文件：插件目录
-const SRC_DIR = path.join(PROJECT_ROOT, 'plugins', 'caveman-codebuddy');
+const SRC_DIR = path.join(PROJECT_ROOT, 'plugins', 'caveman');
+const HOOKS_SRC_DIR = path.join(SRC_DIR, 'hooks', 'codebuddy');
 
 function isNpmInstall() {
   return __dirname.includes('node_modules');
@@ -75,6 +76,19 @@ function countFiles(dir) {
     }
   }
   return count;
+}
+
+function copyPlugin(src, dest) {
+  for (const entry of fs.readdirSync(src, { withFileTypes: true })) {
+    if (entry.name === 'hooks' ||
+        ['.qoder-plugin', '.trae-plugin', '.zcode-plugin', 'plugin.json', 'qwen-extension.json'].includes(entry.name)) continue;
+    const source = path.join(src, entry.name);
+    const target = path.join(dest, entry.name);
+    if (entry.isDirectory()) copyDirRecursive(source, target);
+    else fs.copyFileSync(source, target);
+  }
+  copyDirRecursive(path.join(src, '.codebuddy-plugin'), path.join(dest, '.codebuddy-plugin'));
+  copyDirRecursive(HOOKS_SRC_DIR, path.join(dest, 'hooks', 'codebuddy'));
 }
 
 function findCodeBuddy() {
@@ -167,8 +181,7 @@ function isCavemanStatusLine(sl) {
   // 缓存路径（caveman-codebuddy/<version>/scripts/statusline.js）。锚定为连续路径
   // 段，拒绝两个子串在命令中任意分布导致的误判（否则会把指向别处的 command
   // 错认成 caveman 自己的并静默覆盖）。
-  return cmd.includes('caveman-codebuddy/scripts/statusline.js') ||
-    /caveman-codebuddy\/[^/]+\/scripts\/statusline\.js/.test(cmd);
+  return /caveman(?:-codebuddy)?(?:\/[^/]+)?\/scripts\/statusline\.js/.test(cmd);
 }
 
 function stripStatusLine(settings) {
@@ -241,13 +254,13 @@ function install(dryRun) {
     process.exit(1);
   }
 
-  // 3. 复制插件文件到 ~/.codebuddy/plugins/caveman-codebuddy/
+  // 3. 复制插件文件到 ~/.codebuddy/plugins/caveman/
   console.log(`\n→ Copying plugin to ${INSTALL_DIR}`);
   if (!dryRun) {
     if (fs.existsSync(INSTALL_DIR)) {
       deleteDirRecursive(INSTALL_DIR);
     }
-    copyDirRecursive(SRC_DIR, INSTALL_DIR);
+    copyPlugin(SRC_DIR, INSTALL_DIR);
     console.log(`  copied: ${countFiles(INSTALL_DIR)} files`);
   } else {
     console.log(`  would copy: ${SRC_DIR} → ${INSTALL_DIR}`);

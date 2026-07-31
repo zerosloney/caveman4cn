@@ -49,11 +49,11 @@ if (r.status === 1) {
   // Files were regenerated. Stage them so the developer doesn't have to
   // hunt for which paths changed, then abort so they can re-review.
   const targets = [
-    'plugins/caveman-codebuddy/hooks/caveman-config.js',
-    'plugins/caveman-qoder/hooks/caveman-config.js',
-    'plugins/caveman-qwen/hooks/caveman-config.js',
-    'plugins/caveman-trae/hooks/caveman-config.js',
-    'plugins/caveman-zcode/hooks/caveman-config.js',
+    'plugins/caveman/hooks/codebuddy/caveman-config.js',
+    'plugins/caveman/hooks/qoder/caveman-config.js',
+    'plugins/caveman/hooks/qwen/caveman-config.js',
+    'plugins/caveman/hooks/trae/caveman-config.js',
+    'plugins/caveman/hooks/zcode/caveman-config.js',
   ];
   const git = spawnSync('git', ['add', ...targets], {
     stdio: 'inherit',

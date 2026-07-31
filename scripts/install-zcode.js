@@ -7,7 +7,7 @@
 //   npx @master0071/caveman-zcode --dry-run     # 预览
 //   node scripts/install-zcode.js              # 本地安装
 //
-// 将 plugins/caveman-zcode/ 安装到 ZCode 插件系统：
+// 将 plugins/caveman/ 安装到 ZCode 插件系统：
 //   cache/  → 插件文件
 //   marketplaces/ → 注册
 //   data/   → 启用标记
@@ -15,7 +15,7 @@
 //   node scripts/install-zcode.js --uninstall   # 卸载
 //   node scripts/install-zcode.js --dry-run     # 预览
 //
-// 将 plugins/caveman-zcode/ 安装到 ZCode 插件系统：
+// 将 plugins/caveman/ 安装到 ZCode 插件系统：
 //   cache/  → 插件文件
 //   marketplaces/ → 注册
 //   data/   → 启用标记
@@ -25,7 +25,7 @@
 const fs = require('fs');
 const path = require('path');
 
-const PLUGIN_NAME = 'caveman-zcode';
+const PLUGIN_NAME = 'caveman';
 const PLUGIN_VERSION = '0.1.0';
 // 自定义市场名 —— 不污染官方 zcode-plugins-official 市场。
 // 市场靠目录约定发现：marketplaces/<MARKETPLACE>/marketplace.json 存在即注册。
@@ -47,10 +47,11 @@ const DATA_DIR = path.join(
   ZCODE_PLUGIN_DIR, 'data', `${PLUGIN_NAME}@${MARKETPLACE}`
 );
 
-// 源文件：repo 里的 plugins/caveman-zcode/ 目录
+// 源文件：repo 里的 plugins/caveman/ 目录
 // npm install 后：scripts/ 和 plugins/ 同级
 // npx 运行后：PATH 解析到 node_modules/@master0071/caveman-zcode/scripts/
-const SRC_DIR = path.join(__dirname, '..', 'plugins', 'caveman-zcode');
+const SRC_DIR = path.join(__dirname, '..', 'plugins', 'caveman');
+const HOOKS_SRC_DIR = path.join(SRC_DIR, 'hooks', 'zcode');
 
 const SUBDIRS = ['.zcode-plugin', 'skills', 'commands', 'agents', 'hooks', 'assets'];
 
@@ -107,8 +108,10 @@ function install(dryRun) {
   // 2. 复制插件文件
   console.log(`→ 复制插件文件到 ${PLUGIN_ROOT}`);
   for (const sub of SUBDIRS) {
-    const src = path.join(SRC_DIR, sub);
-    const dest = path.join(PLUGIN_ROOT, sub);
+      const src = sub === 'hooks' ? HOOKS_SRC_DIR : path.join(SRC_DIR, sub);
+      const dest = sub === 'hooks'
+        ? path.join(PLUGIN_ROOT, 'hooks', 'zcode')
+        : path.join(PLUGIN_ROOT, sub);
     if (!fs.existsSync(src)) {
       console.warn(`  跳过 ${sub}（源目录不存在）`);
       continue;

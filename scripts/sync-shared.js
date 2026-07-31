@@ -2,7 +2,7 @@
 // sync-shared — regenerate plugin caveman-config.js files from the template.
 //
 // Single source of truth: shared/caveman-config.template.js
-// Targets: plugins/caveman-<id>/hooks/caveman-config.js
+// Targets: plugins/caveman/hooks/<id>/caveman-config.js
 //
 // Render rules (deliberately tiny — no template engine dependency):
 //   {{AGENT_ID}}      → quoted agent id, e.g. 'zcode'
@@ -119,7 +119,7 @@ function main() {
 
   for (const agent of AGENTS) {
     const target = path.join(
-      REPO_ROOT, 'plugins', `caveman-${agent.id}`, 'hooks', 'caveman-config.js'
+      REPO_ROOT, 'plugins', 'caveman', 'hooks', agent.id, 'caveman-config.js'
     );
     const rendered = render(template, agent);
     assertClean(agent.id, rendered);

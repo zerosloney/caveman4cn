@@ -27,7 +27,7 @@
 const fs = require('fs');
 const path = require('path');
 
-const PLUGIN_NAME = 'caveman-trae';
+const PLUGIN_NAME = 'caveman';
 const PLUGIN_VERSION = '0.1.0';
 const MARKETPLACE = 'master0071'; // 仅为一致性标识；Trae 不读市场清单
 
@@ -39,13 +39,15 @@ const TRAE_HOME = path.join(
 
 // hooks/tools/agents 的稳定落脚点。hooks.json 里的绝对路径指向这里。
 const PLUGIN_STABLE_DIR = path.join(TRAE_HOME, PLUGIN_NAME);
+const PLUGIN_HOOKS_DIR = path.join(PLUGIN_STABLE_DIR, 'hooks', 'trae');
 
 const HOOKS_JSON = path.join(TRAE_HOME, 'hooks.json');
 
-// 源文件：repo 里的 plugins/caveman-trae/ 目录
+// 源文件：repo 里的 plugins/caveman/ 目录
 // npm install 后：scripts/ 和 plugins/ 同级
 // npx 运行后：PATH 解析到 node_modules/@master0071/caveman-trae/scripts/
-const SRC_DIR = path.join(__dirname, '..', 'plugins', 'caveman-trae');
+const SRC_DIR = path.join(__dirname, '..', 'plugins', 'caveman');
+const HOOKS_SRC_DIR = path.join(SRC_DIR, 'hooks', 'trae');
 
 const SKILLS = ['caveman', 'caveman-commit', 'caveman-compress', 'caveman-help',
                 'caveman-review', 'caveman-stats', 'cavecrew'];
@@ -114,7 +116,7 @@ function toPosix(p) {
 // 读取源 hooks.json 模板，把 ${TRAE_PLUGIN_ROOT} 替换为稳定目录的绝对
 // POSIX 路径，剥离 _comment 字段，返回解析后的 hooks 对象。
 function buildHooksObject() {
-  const src = JSON.parse(fs.readFileSync(path.join(SRC_DIR, 'hooks', 'hooks.json'), 'utf-8'));
+  const src = JSON.parse(fs.readFileSync(path.join(HOOKS_SRC_DIR, 'hooks.json'), 'utf-8'));
   const stablePosix = toPosix(PLUGIN_STABLE_DIR);
   const rewrite = (s) => s.replace(/\$\{TRAE_PLUGIN_ROOT\}/g, stablePosix);
 
@@ -135,8 +137,8 @@ function buildHooksObject() {
 
 // 标记一个 hook 条目是否属于 caveman-trae（按 command 含路径段判定）。
 function isCavemanHook(hookDef) {
-  return /caveman-trae[\\/]/.test(hookDef.command || '') ||
-         /caveman-trae\/hooks\//.test(hookDef.command || '');
+  return /caveman(?:-trae)?[\\/]/.test(hookDef.command || '') ||
+         /caveman(?:-trae)?\/hooks\//.test(hookDef.command || '');
 }
 
 // 合并 caveman-trae 的 hook 条目到现有 ~/.trae-cn/hooks.json。
@@ -244,8 +246,8 @@ function install(dryRun) {
   // 5. 复制 hooks + tools + agents 到 ~/.trae-cn/caveman-trae/
   console.log(`\n→ 复制 hooks/tools/agents 到 ${toPosix(PLUGIN_STABLE_DIR)}/`);
   for (const f of HOOK_FILES) {
-    const src = path.join(SRC_DIR, 'hooks', f);
-    const dest = path.join(PLUGIN_STABLE_DIR, 'hooks', f);
+    const src = path.join(HOOKS_SRC_DIR, f);
+    const dest = path.join(PLUGIN_HOOKS_DIR, f);
     if (!fs.existsSync(src)) continue;
     if (!dryRun) {
       fs.mkdirSync(path.dirname(dest), { recursive: true });

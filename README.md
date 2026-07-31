@@ -1,6 +1,6 @@
 # Caveman Marketplace (master0071) 🪨
 
-**一个仓库，五个宿主插件。** 词多何用，少即是好。
+**一个仓库，一个 Caveman 插件，多平台 hooks 适配。** 词多何用，少即是好。
 
 让代理像原始人一样说话。同样的答案，**输出 token 减少 65%**。脑子照旧，嘴巴变小。
 
@@ -8,23 +8,23 @@
 
 本仓库是名为 **`master0071`** 的统一插件市场，同时为五个宿主提供 Caveman 插件：
 
-- **ZCode** 加载本仓库 → 获得 `caveman-zcode`
-- **CodeBuddy** 加载本仓库 → 获得 `caveman-codebuddy`
-- **Trae IDE** 运行 `install-trae.js` → 获得 `caveman-trae`
-- **Qwen Code** 运行 `install-qwen.js` → 获得 `caveman-qwen`
-- **Qoder** 运行 `install-qoder.js` → 获得 `caveman-qoder`
+- **ZCode** 加载本仓库 → 获得 `caveman`
+- **CodeBuddy** 加载本仓库 → 获得 `caveman`
+- **Trae IDE** 运行 `install-trae.js` → 安装 `caveman`
+- **Qwen Code** 运行 `install-qwen.js` → 安装 `caveman`
+- **Qoder** 运行 `install-qoder.js` → 安装 `caveman`
 
 五个宿主各按自己的约定发现资产，互不干扰：
 
 | 宿主 | 发现机制 | 加载的插件 |
 |------|---------|-----------|
-| ZCode | 仓库根 `marketplace.json` + `plugins/caveman-zcode/.zcode-plugin/plugin.json` | `caveman-zcode` |
-| CodeBuddy | `.codebuddy-plugin/marketplace.json` + `plugins/caveman-codebuddy/.codebuddy-plugin/plugin.json` | `caveman-codebuddy` |
-| Trae IDE | 安装器铺资产到 `~/.trae-cn/`（无市场清单概念） | `caveman-trae` |
-| Qwen Code | 安装器铺扩展到 `~/.qwen/extensions/caveman-qwen/` + 合并 `~/.qwen/settings.json` | `caveman-qwen` |
-| Qoder | `.qoder-plugin/marketplace.json` + `plugins/caveman-qoder/.qoder-plugin/plugin.json`；安装器铺插件到 `~/.qoder/plugins/caveman-qoder/` + 合并 `~/.qoder/settings.json` | `caveman-qoder` |
+| ZCode | 仓库根 `marketplace.json` + `plugins/caveman/.zcode-plugin/plugin.json` | `caveman` |
+| CodeBuddy | `.codebuddy-plugin/marketplace.json` + `plugins/caveman/.codebuddy-plugin/plugin.json` | `caveman` |
+| Trae IDE | 安装器铺资产到 `~/.trae-cn/`（无市场清单概念） | `caveman` |
+| Qwen Code | 安装器铺扩展到 `~/.qwen/extensions/caveman/` + 合并 `~/.qwen/settings.json` | `caveman` |
+| Qoder | `.qoder-plugin/marketplace.json` + `plugins/caveman/.qoder-plugin/plugin.json`；安装器铺插件到 `~/.qoder/plugins/caveman/` + 合并 `~/.qoder/settings.json` | `caveman` |
 
-ZCode 与 CodeBuddy 靠各自清单目录约定区分；Trae 没有 marketplace/plugin.json 概念，由安装器把 skills/commands/hooks/rules 铺到 `~/.trae-cn/` 全局约定位置；Qwen Code 由安装器把扩展铺到 `~/.qwen/extensions/caveman-qwen/`，并把钩子与状态行合并进 `~/.qwen/settings.json`；Qoder 由安装器把插件铺到 `~/.qoder/plugins/caveman-qoder/`（含 `.qoder-plugin/plugin.json` 清单），并把钩子合并进 `~/.qoder/settings.json`（双保险：也支持 `qodercli plugins marketplace add` + `qodercli plugins install` 正式登记，市场清单为根 `.qoder-plugin/marketplace.json`）。
+ZCode 与 CodeBuddy 靠各自清单目录约定区分；Trae 没有 marketplace/plugin.json 概念，由安装器把 skills/commands/hooks/rules 铺到 `~/.trae-cn/` 全局约定位置；Qwen Code 由安装器把扩展铺到 `~/.qwen/extensions/caveman/`，并把钩子与状态行合并进 `~/.qwen/settings.json`；Qoder 由安装器把插件铺到 `~/.qoder/plugins/caveman/`（含 `.qoder-plugin/plugin.json` 清单），并把钩子合并进 `~/.qoder/settings.json`。公共源码只保留一份，平台差异位于 `plugins/caveman/hooks/<platform>/`。
 
 ## 目录结构
 
@@ -35,16 +35,17 @@ caveman4cn/
 ├── .codebuddy-plugin/marketplace.json   # CodeBuddy 清单 → caveman-codebuddy
 ├── .qoder-plugin/marketplace.json       # Qoder 市场清单 → caveman-qoder
 ├── plugins/
-│   ├── caveman-zcode/                   # ZCode 插件（Node hooks）
-│   │   └── .zcode-plugin/plugin.json
-│   ├── caveman-codebuddy/               # CodeBuddy 插件（Node hooks）
-│   │   └── .codebuddy-plugin/plugin.json
-│   ├── caveman-trae/                    # Trae 插件（文档清单 + 安装器铺放资产）
-│   │   └── .trae-plugin/plugin.json     # 仅作文档；Trae 不扫描
-│   ├── caveman-qwen/                    # Qwen Code 扩展（Node hooks + statusline）
-│   │   └── qwen-extension.json          # 插件内部清单（安装器复制用）
-│   └── caveman-qoder/                   # Qoder 插件（Node hooks，无 statusline）
-│       └── .qoder-plugin/plugin.json    # Qoder 插件清单
+│   └── caveman/                         # 唯一公共插件源码
+│       ├── .zcode-plugin/plugin.json
+│       ├── .codebuddy-plugin/plugin.json
+│       ├── .qoder-plugin/plugin.json
+│       ├── qwen-extension.json
+│       └── hooks/                       # 唯一平台差异
+│           ├── zcode/
+│           ├── codebuddy/
+│           ├── trae/
+│           ├── qwen/
+│           └── qoder/
 ├── skills/                              # 共享技能源（真理之源）
 ├── scripts/
 │   ├── install-zcode.js                 # 安装到 ZCode
@@ -111,9 +112,9 @@ node scripts/install-qwen.js --dry-run   # 预览
 node scripts/install-qwen.js --uninstall # 卸载
 ```
 
-Qwen Code 的扩展约定：安装器把扩展铺到 `~/.qwen/extensions/caveman-qwen/`，并把钩子与状态行合并进 `~/.qwen/settings.json`：
-- 扩展文件 → `~/.qwen/extensions/caveman-qwen/{skills,commands,agents,hooks,scripts,tools}/`
-- 清单 → `~/.qwen/extensions/caveman-qwen/qwen-extension.json`（根级扩展清单）
+Qwen Code 的扩展约定：安装器把扩展铺到 `~/.qwen/extensions/caveman/`，并把钩子与状态行合并进 `~/.qwen/settings.json`：
+- 扩展文件 → `~/.qwen/extensions/caveman/{skills,commands,agents,hooks,scripts,tools}/`
+- 清单 → `~/.qwen/extensions/caveman/qwen-extension.json`（根级扩展清单）
 - `~/.qwen/settings.json` 合并 7 个事件钩子（SessionStart/UserPromptSubmit/PreToolUse/PostToolUse/PostToolUseFailure/PreCompact/Stop）+ `ui.statusLine`（自动配置，已存在则不覆盖）
 
 安装后重启 Qwen Code，或运行 `/extensions` 热重载。
@@ -128,16 +129,16 @@ node scripts/install-qoder.js --dry-run   # 预览
 node scripts/install-qoder.js --uninstall # 卸载
 ```
 
-Qoder 的插件约定：安装器把插件铺到 `~/.qoder/plugins/caveman-qoder/`（含 `.qoder-plugin/plugin.json` 清单），并把钩子合并进 `~/.qoder/settings.json`（双保险）：
-- 插件文件 → `~/.qoder/plugins/caveman-qoder/{skills,commands,agents,hooks,tools}/`
-- 清单 → `~/.qoder/plugins/caveman-qoder/.qoder-plugin/plugin.json`
+Qoder 的插件约定：安装器把插件铺到 `~/.qoder/plugins/caveman/`（含 `.qoder-plugin/plugin.json` 清单），并把钩子合并进 `~/.qoder/settings.json`（双保险）：
+- 插件文件 → `~/.qoder/plugins/caveman/{skills,commands,agents,hooks,tools}/`
+- 清单 → `~/.qoder/plugins/caveman/.qoder-plugin/plugin.json`
 - 插件级 `hooks/hooks.json`（用 `${QODER_PLUGIN_ROOT}`，需 qodercli 登记才注入）
 - `~/.qoder/settings.json` 合并 7 个事件钩子（SessionStart/UserPromptSubmit/PreToolUse/PostToolUse/PostToolUseFailure/PreCompact/Stop）——绝对路径，无需 qodercli 登记也能工作
 
 可选：让 Qoder 正式识别插件（启用 `${QODER_PLUGIN_ROOT}` 变量注入）：
 ```
 qodercli plugins marketplace add <repo-or-dir>
-qodercli plugins install caveman-qoder
+qodercli plugins install caveman
 ```
 
 注意：Qoder **IDE 支持 5 个事件**（无 SessionStart/PreCompact），**CLI 支持 22 个事件**（含 SessionStart/PreCompact）。IDE 和 CLI 共享同一份配置——安装器注册全部 7 个事件，IDE 静默忽略它不支持的两个（SessionStart/PreCompact），CLI 则使用它们获得真正的会话启动自动激活。IDE 用户 caveman 模式在**首次提交 prompt 时由 UserPromptSubmit 钩子自动激活**（SessionStart 的等价兜底）。Qoder 也**不支持 statusLine**，故无状态行功能。
@@ -270,10 +271,10 @@ Qwen Code 用户运行 `install-qwen.js` 时已自动写入 `ui.statusLine`（�
 
 ## 工作原理
 
-1. 安装器将 `plugins/caveman-zcode/` 或 `plugins/caveman-codebuddy/` 复制到对应宿主的插件目录；Trae 则由安装器把 `plugins/caveman-trae/` 的资产铺到 `~/.trae-cn/` 各约定位置；Qwen Code 则由安装器把 `plugins/caveman-qwen/` 铺到 `~/.qwen/extensions/caveman-qwen/`；Qoder 则由安装器把 `plugins/caveman-qoder/` 铺到 `~/.qoder/plugins/caveman-qoder/`
+1. 安装器从唯一的 `plugins/caveman/` 源目录复制公共资产，并只组装当前宿主的 `hooks/<platform>/`；Trae、Qwen Code、Qoder 再按各自约定铺放或合并配置
 2. 技能文件（`skills/*/SKILL.md`）告诉宿主：丢弃废话，保留实质
 3. ZCode/CodeBuddy 的插件系统注册钩子、命令和技能；Trae 的 skills/commands/rules 落到 `~/.trae-cn/` 全局目录自动加载，hooks 通过合并 `~/.trae-cn/hooks.json` 注册；Qwen Code 的 skills/commands/agents 落到扩展目录自动发现，hooks 与 statusLine 通过合并 `~/.qwen/settings.json` 注册；Qoder 的 skills/commands/agents 落到插件目录自动发现，hooks 通过合并 `~/.qoder/settings.json` 注册（也支持插件级 `hooks/hooks.json`，需 qodercli 登记）
-4. ZCode/CodeBuddy 只读取与自己约定相符的清单，因此只会加载对应插件；Trae、Qwen Code 与 Qoder 不读市场清单，资产靠约定路径发现
+4. ZCode/CodeBuddy 只读取与自己约定相符的 manifest；Trae、Qwen Code 与 Qoder 不同程度依赖安装器和约定路径发现
 
 ## 许可证
 

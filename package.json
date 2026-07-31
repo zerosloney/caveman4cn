@@ -1,7 +1,7 @@
 {
   "name": "@master0071/caveman4cn",
   "version": "0.1.0",
-  "description": "Unified Caveman plugin marketplace (master0071). One repo, five host plugins: caveman-zcode (ZCode) + caveman-codebuddy (CodeBuddy) + caveman-trae (Trae IDE) + caveman-qwen (Qwen Code) + caveman-qoder (Qoder). Ultra-compressed communication mode — cut filler, keep technical accuracy.",
+  "description": "Unified Caveman plugin marketplace (master0071). One shared plugin source with platform-specific hooks for ZCode, CodeBuddy, Trae IDE, Qwen Code, and Qoder.",
   "license": "MIT",
   "author": {
     "name": "master0071",
@@ -38,11 +38,7 @@
     "postinstall": "node ./scripts/setup-git-hooks.js && node ./scripts/postinstall.js"
   },
   "files": [
-    "plugins/caveman-zcode/",
-    "plugins/caveman-codebuddy/",
-    "plugins/caveman-trae/",
-    "plugins/caveman-qwen/",
-    "plugins/caveman-qoder/",
+    "plugins/caveman/",
     "scripts/install-zcode.js",
     "scripts/install-codebuddy.js",
     "scripts/install-trae.js",
