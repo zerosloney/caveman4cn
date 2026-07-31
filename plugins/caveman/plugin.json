@@ -1,8 +1,8 @@
 {
   "name": "caveman",
   "displayName": "Caveman for Qoder",
-  "version": "0.0.1",
-  "description": "Caveman workflow plugin for Qoder CLI.",
+  "version": "0.1.0",
+  "description": "Ultra-compressed communication mode for Qoder. Cut filler. Keep technical accuracy. Supports intensity levels: lite, full (default), ultra, wenyan-lite, wenyan-full, wenyan-ultra.",
   "author": {
     "name": "caveman4cn"
   },

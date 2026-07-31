@@ -61,11 +61,37 @@ const DENY_PATTERNS = [
   /~\/\.kube\//,
 ];
 
-function isSafePath(filePath) {
+function isWithinWorkspace(filePath, workspaceRoot) {
+  const root = path.resolve(workspaceRoot || process.cwd());
+  const candidate = path.resolve(root, filePath);
+  const relative = path.relative(root, candidate);
+  if (relative === '' || relative === '..' || relative.startsWith(`..${path.sep}`) || path.isAbsolute(relative)) {
+    return false;
+  }
+
+  // Existing symlinks must not redirect an approved path outside the workspace.
+  try {
+    const realRoot = fs.realpathSync(root);
+    const realTarget = fs.existsSync(candidate)
+      ? fs.realpathSync(candidate)
+      : path.join(fs.realpathSync(path.dirname(candidate)), path.basename(candidate));
+    const realRelative = path.relative(realRoot, realTarget);
+    return realRelative !== '..'
+      && !realRelative.startsWith(`..${path.sep}`)
+      && !path.isAbsolute(realRelative);
+  } catch {
+    return false;
+  }
+}
+
+function isSafePath(filePath, workspaceRoot) {
   if (!filePath) return false;
   const ext = path.extname(filePath).toLowerCase();
   if (!SAFE_EXTENSIONS.has(ext)) return false;
-  return SAFE_PATH_PREFIXES.some((prefix) => filePath.startsWith(prefix));
+  if (!isWithinWorkspace(filePath, workspaceRoot)) return false;
+  const relative = path.relative(path.resolve(workspaceRoot || process.cwd()), path.resolve(workspaceRoot || process.cwd(), filePath));
+  const normalized = relative.replace(/\\/g, '/');
+  return SAFE_PATH_PREFIXES.some((prefix) => normalized.startsWith(prefix));
 }
 
 function isSensitivePath(filePath) {
@@ -109,6 +135,7 @@ async function main() {
   const toolName = input.tool_name || '';
   const toolInput = input.tool_input || {};
   const filePath = toolInput.file_path || toolInput.path || '';
+  const workspaceRoot = input.cwd || input.workspace?.current_dir || process.cwd();
 
   // Only opine on write-family tools.
   if (toolName !== 'Write' && toolName !== 'Edit') {
@@ -124,7 +151,7 @@ async function main() {
   }
 
   // Auto-approve known-safe project paths.
-  if (isSafePath(filePath)) {
+  if (isSafePath(filePath, workspaceRoot)) {
     process.stderr.write(`[caveman] PermissionRequest: auto-allow ${filePath}\n`);
     process.stdout.write(JSON.stringify(allow()));
     return;

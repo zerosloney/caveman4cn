@@ -7,10 +7,20 @@
 //   - stdout: JSON. additionalContext is the only recognized key for injection.
 //   - Emit { continue: true } when there's nothing to inject.
 
+const MAX_INPUT_BYTES = 1024 * 1024;
+
 async function main() {
   let raw = '';
+  let inputBytes = 0;
   process.stdin.setEncoding('utf-8');
-  for await (const chunk of process.stdin) raw += chunk;
+  for await (const chunk of process.stdin) {
+    inputBytes += Buffer.byteLength(chunk, 'utf8');
+    if (inputBytes > MAX_INPUT_BYTES) {
+      process.stdout.write(JSON.stringify({ continue: true }));
+      return;
+    }
+    raw += chunk;
+  }
 
   let input;
   try {
@@ -20,16 +30,10 @@ async function main() {
     return;
   }
   const toolName = input.tool_name || '';
-  const toolResponse = input.tool_response || {};
-
   // Provide context about the tool result only when noteworthy
-  let additionalContext = '';
-  if (toolResponse && typeof toolResponse === 'object') {
-    const resultStr = JSON.stringify(toolResponse);
-    if (resultStr.length > 5000) {
-      additionalContext = `[caveman] ${toolName} returned a large response (${resultStr.length} bytes).`;
-    }
-  }
+  const additionalContext = inputBytes > 5000
+    ? `[caveman] ${toolName} returned a large tool event (${inputBytes} bytes).`
+    : '';
 
   process.stderr.write(`[caveman] PostToolUse: ${toolName} completed\n`);
   process.stdout.write(

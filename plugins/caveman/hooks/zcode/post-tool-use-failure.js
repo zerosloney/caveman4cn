@@ -22,11 +22,11 @@ async function main() {
   const toolName = input.tool_name || '';
   // input.error may be a string or an object {message, stack} — normalize to string.
   const rawError = input.error;
-  const error = rawError == null
+  const error = redactError(rawError == null
     ? 'unknown error'
     : (typeof rawError === 'string'
         ? rawError
-        : (rawError.message || JSON.stringify(rawError)));
+        : (rawError.message || JSON.stringify(rawError))));
   const isInterrupt = input.is_interrupt || false;
 
   // Build targeted recovery advice based on tool type
@@ -49,6 +49,13 @@ async function main() {
 
   process.stderr.write(`[caveman] PostToolUseFailure: ${toolName} — ${error.slice(0, 100)}\n`);
   process.stdout.write(JSON.stringify({ additionalContext }));
+}
+
+function redactError(value) {
+  return String(value)
+    .replace(/(authorization\s*:\s*bearer\s+)[^\s,;]+/gi, '$1[REDACTED]')
+    .replace(/((?:api[_-]?key|token|password|passwd|secret|access[_-]?key)\s*[=:]\s*)[^\s,;&]+/gi, '$1[REDACTED]')
+    .replace(/([?&](?:token|key|api[_-]?key|password|secret)=)[^&\s]+/gi, '$1[REDACTED]');
 }
 
 main().catch((err) => {

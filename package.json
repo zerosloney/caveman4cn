@@ -35,7 +35,7 @@
     "install:qwen": "node ./scripts/install-qwen.js",
     "install:qoder": "node ./scripts/install-qoder.js",
     "sync:shared": "node ./scripts/sync-shared.js",
-    "postinstall": "node ./scripts/setup-git-hooks.js && node ./scripts/postinstall.js"
+    "postinstall": "node ./scripts/setup-git-hooks.js && node ./scripts/postinstall.js --check"
   },
   "files": [
     "plugins/caveman/",

@@ -78,11 +78,14 @@ function processTarget(target, targetDir, ruleBody, opts) {
 }
 
 function parseArgs(argv) {
-  const opts = { dryRun: false, force: false, target: process.cwd() };
+  const opts = { dryRun: true, force: false, target: process.cwd() };
   for (let i = 0; i < argv.length; i++) {
     const a = argv[i];
     if (a === '--dry-run') opts.dryRun = true;
-    else if (a === '--force' || a === '-f') opts.force = true;
+    else if (a === '--force' || a === '-f') {
+      opts.force = true;
+      opts.dryRun = false;
+    }
     else if (a === '-h' || a === '--help') opts.help = true;
     else if (!a.startsWith('-')) opts.target = path.resolve(a);
   }
@@ -100,8 +103,8 @@ Target:
   AGENTS.md   appended (created if absent). Qwen Code reads this every session.
 
 Flags:
-  --dry-run   show what would change, do not write
-  --force     overwrite an existing rule block (default: skip if sentinel present)
+  --dry-run   show what would change, do not write (default)
+  --force     write changes without preview; existing sentinel remains skipped
 `);
 }
 

@@ -1,5 +1,6 @@
 #!/usr/bin/env node
-// postinstall dispatcher — runs each host installer only when its host is present.
+// Optional host installer dispatcher — runs only when explicitly enabled and the
+// corresponding host is present.
 //
 // npm runs package.json scripts via cmd.exe on Windows (and /bin/sh elsewhere), so
 // shell-based `test -d ~/.<host>` gating is not portable. This Node dispatcher
@@ -31,6 +32,11 @@ const HOSTS = [
 ];
 
 function main() {
+  if (!process.argv.includes('--install') && process.env.CAVEMAN_AUTO_INSTALL !== '1') {
+    console.log('[postinstall] host installers disabled by default; run an explicit install script to enable a host.');
+    return;
+  }
+
   for (const host of HOSTS) {
     if (!fs.existsSync(host.probe)) {
       console.log(`[postinstall] skip ${host.name} — host directory not found (${host.probe})`);

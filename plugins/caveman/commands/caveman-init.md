@@ -11,11 +11,13 @@ How to run:
    ```
    node "${extensionPath}/tools/caveman-init.js" $ARGUMENTS
    ```
-2. Otherwise run standalone (self-contained, supports stdin execution):
+2. Otherwise run the checked-out local script:
    ```
-   curl -fsSL https://raw.githubusercontent.com/zerosloney/caveman4cn/main/plugins/caveman/tools/caveman-init.js | node - $ARGUMENTS
+   node "<repo>/plugins/caveman/tools/caveman-init.js" $ARGUMENTS
    ```
+
+   Do not pipe an unpinned remote script into `node`.
 
 The script is idempotent — safe to re-run. It appends the rule block to `AGENTS.md` (creating the file if absent) and skips if the caveman sentinel is already present.
 
-Use `--dry-run` first if the user did not pass `--force`, so we never silently overwrite an existing rule block. Report the result (added / appended / skipped).
+The command defaults to `--dry-run`; pass `--force` only after user confirmation to write. Existing sentinel blocks remain skipped. Report the result (added / appended / skipped).

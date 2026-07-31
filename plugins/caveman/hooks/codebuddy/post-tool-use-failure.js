@@ -21,7 +21,7 @@ async function main() {
     return;
   }
   const toolName = input.tool_name || '';
-  const error = input.error || 'unknown error';
+  const error = redactError(input.error || 'unknown error');
   const isInterrupt = input.is_interrupt || false;
 
   // Build targeted recovery advice based on tool type
@@ -46,6 +46,16 @@ async function main() {
   process.stdout.write(
     JSON.stringify({ continue: true, hookSpecificOutput: { additionalContext } })
   );
+}
+
+function redactError(value) {
+  const text = value && typeof value === 'object'
+    ? String(value.message || JSON.stringify(value))
+    : String(value);
+  return text
+    .replace(/(authorization\s*:\s*bearer\s+)[^\s,;]+/gi, '$1[REDACTED]')
+    .replace(/((?:api[_-]?key|token|password|passwd|secret|access[_-]?key)\s*[=:]\s*)[^\s,;&]+/gi, '$1[REDACTED]')
+    .replace(/([?&](?:token|key|api[_-]?key|password|secret)=)[^&\s]+/gi, '$1[REDACTED]');
 }
 
 main().catch((err) => {

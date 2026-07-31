@@ -30,6 +30,8 @@ const path = require('path');
 const fs = require('fs');
 const { execFileSync } = require('child_process');
 
+const MAX_INPUT_BYTES = 1024 * 1024;
+
 // ── Agent identity (hardcoded per build) ─────────────────────────────────────
 const AGENT_ID = 'qwen';
 
@@ -170,8 +172,16 @@ function loadUserPrefs() {
 
 async function main() {
   let raw = '';
+  let inputBytes = 0;
   process.stdin.setEncoding('utf-8');
-  for await (const chunk of process.stdin) raw += chunk;
+  for await (const chunk of process.stdin) {
+    inputBytes += Buffer.byteLength(chunk, 'utf8');
+    if (inputBytes > MAX_INPUT_BYTES) {
+      process.stdout.write('');
+      return;
+    }
+    raw += chunk;
+  }
 
   let input;
   try {

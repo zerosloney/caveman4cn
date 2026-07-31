@@ -151,7 +151,13 @@ qodercli plugins install caveman
 npx @master0071/caveman4cn
 ```
 
-`postinstall` 会依次运行五个安装器。
+安装不会自动修改宿主配置。按需运行对应安装器，例如：
+
+```bash
+npm run install:qwen
+```
+
+也可直接运行 `npm run install:zcode`、`install:codebuddy`、`install:trae` 或 `install:qoder`。
 
 ## 使用
 

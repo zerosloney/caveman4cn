@@ -114,6 +114,7 @@ from .detect import should_compress
 from .validate import validate
 
 MAX_RETRIES = 2
+CLAUDE_TIMEOUT_SECONDS = 120
 
 
 # ---------- Claude Calls ----------
@@ -137,7 +138,10 @@ def call_claude(prompt: str) -> str:
         try:
             import anthropic
 
-            client = anthropic.Anthropic(api_key=api_key)
+            client = anthropic.Anthropic(
+                api_key=api_key,
+                timeout=CLAUDE_TIMEOUT_SECONDS,
+            )
             msg = client.messages.create(
                 model=os.environ.get("CAVEMAN_MODEL", "claude-sonnet-4-5"),
                 max_tokens=8192,
@@ -162,8 +166,13 @@ def call_claude(prompt: str) -> str:
             check=True,
             encoding="utf-8",
             errors="replace",
+            timeout=CLAUDE_TIMEOUT_SECONDS,
         )
         return strip_llm_wrapper(result.stdout.strip())
+    except subprocess.TimeoutExpired as e:
+        raise RuntimeError(
+            f"Claude call timed out after {CLAUDE_TIMEOUT_SECONDS}s"
+        ) from e
     except subprocess.CalledProcessError as e:
         raise RuntimeError(f"Claude call failed:\n{e.stderr}")
 
