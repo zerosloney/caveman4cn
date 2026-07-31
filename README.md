@@ -99,7 +99,7 @@ Trae 没有 marketplace 概念——安装器把资产直接铺到 `~/.trae-cn/`
 - skills → `~/.trae-cn/skills/<name>/`
 - commands → `~/.trae-cn/commands/`
 - rules → `~/.trae-cn/rules/caveman-activate.md`（静态激活兜底）
-- hooks + helpers + tools + agents → `~/.trae-cn/caveman-trae/`
+- hooks + helpers + tools + agents → `~/.trae-cn/caveman/`
 - `~/.trae-cn/hooks.json` 合并 5 个事件（SessionStart/UserPromptSubmit/PreToolUse/PostToolUse/Stop）
 
 安装后重启 Trae IDE。
@@ -179,7 +179,7 @@ npx @master0071/caveman4cn
 
 ## 状态行配置（CodeBuddy Code / Qwen Code）
 
-Caveman 插件支持在 CodeBuddy Code 与 Qwen Code 界面底部显示状态行，实时显示当前压缩模式和 token 节省统计。通过安装器（`npx @master0071/caveman-codebuddy` / `install-qwen.js`）安装时会自动写入状态行配置；**从 marketplace UI/CLI 直接安装 CodeBuddy 插件不会触发安装器**，需运行 `/caveman-statusline --setup` 补写。如状态行未生效或路径漂移（升级版本后），同样运行 `/caveman-statusline` 重新探测并写入正确路径。
+Caveman 插件支持在 CodeBuddy Code 与 Qwen Code 界面底部显示状态行，实时显示当前压缩模式和 token 节省统计。通过安装器（`npx -p @master0071/caveman4cn caveman-codebuddy` / `install-qwen.js`）安装时会自动写入状态行配置；**从 marketplace UI/CLI 直接安装 CodeBuddy 插件不会触发安装器**，需运行 `/caveman-statusline --setup` 补写。如状态行未生效或路径漂移（升级版本后），同样运行 `/caveman-statusline` 重新探测并写入正确路径。
 
 ### 效果预览
 

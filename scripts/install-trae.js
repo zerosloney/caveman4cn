@@ -2,9 +2,9 @@
 // install-trae.js — Install caveman plugin for Trae IDE
 //
 // 用法：
-//   npx @master0071/caveman-trae              # 安装
-//   npx @master0071/caveman-trae --uninstall   # 卸载
-//   npx @master0071/caveman-trae --dry-run     # 预览
+//   npx -p @master0071/caveman4cn caveman-trae              # 安装
+//   npx -p @master0071/caveman4cn caveman-trae --uninstall   # 卸载
+//   npx -p @master0071/caveman4cn caveman-trae --dry-run     # 预览
 //   node scripts/install-trae.js              # 本地安装
 //
 // Trae IDE 没有 marketplace/plugin.json 概念——它的 AI 资产是散落在
@@ -14,11 +14,11 @@
 //   ~/.trae-cn/skills/<name>/          # 7 个技能
 //   ~/.trae-cn/commands/<name>.md      # 7 个命令
 //   ~/.trae-cn/rules/caveman-activate.md  # 静态激活规则（Trae 原生 rules）
-//   ~/.trae-cn/caveman-trae/           # 稳定目录：hooks/ tools/ agents/
+//   ~/.trae-cn/caveman/                # 稳定目录：hooks/ tools/ agents/
 //   ~/.trae-cn/hooks.json              # 合并 5 个事件的 hook 条目
 //
 // 关键：Trae 不在 command 字符串里插值 ${VAR}，所以写入 hooks.json 时把
-// ${TRAE_PLUGIN_ROOT} 替换为 ~/.trae-cn/caveman-trae 的绝对路径（正斜杠）。
+// ${TRAE_PLUGIN_ROOT} 替换为 ~/.trae-cn/caveman 的绝对路径（正斜杠）。
 //
 // 不依赖项目源目录；可从 npm 包运行。
 
@@ -243,7 +243,7 @@ function install(dryRun) {
     }
   }
 
-  // 5. 复制 hooks + tools + agents 到 ~/.trae-cn/caveman-trae/
+  // 5. 复制 hooks + tools + agents 到 ~/.trae-cn/caveman/
   console.log(`\n→ 复制 hooks/tools/agents 到 ${toPosix(PLUGIN_STABLE_DIR)}/`);
   for (const f of HOOK_FILES) {
     const src = path.join(HOOKS_SRC_DIR, f);

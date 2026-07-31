@@ -17,7 +17,7 @@
 插件一旦安装，不发任何网络连接。审计本仓库即可验证：
 
 - **Skills**（`skills/*/SKILL.md`）是 markdown prompt——无可执行代码、无网络。
-- **Hooks**（`plugins/caveman-codebuddy/hooks/*.js`、`plugins/caveman-zcode/hooks/*.js`）是本地 Node 脚本。它们只读写本地文件（会话记录、`~/.caveman-active` flag、`~/.caveman/lifetime-saved.json`），不含 HTTP、fetch 或 socket 模块。
+- **Hooks**（`plugins/caveman/hooks/codebuddy/*.js`、`plugins/caveman/hooks/zcode/*.js` 等 5 平台）是本地 Node 脚本。它们只读写本地文件（会话记录、`~/.caveman-active` flag、`~/.caveman/lifetime-saved.json`），不含 HTTP、fetch 或 socket 模块。
 - **`/caveman-stats`** 解析 `~/.codebuddy/projects/`（或 `~/.zcode/cli/agents/`）下的本地 CodeBuddy/ZCode 会话 JSONL 文件以显示 token 计数。它用硬编码的压缩常数（2.86），不传输任何东西。
 - **`/caveman-compress`** 只做本地文件 I/O——它重写一个明确命名的本地文件并创建 `.original.md` 备份。无 globbing、无 shell-out。
 - **`/caveman-init`** 把激活规则写进目标仓库的 `AGENTS.md`。一次本地文件写入。无网络。
@@ -42,5 +42,5 @@
 
 ## 关于扫描器警告
 
-- **Snyk 对 `caveman-compress` 标 "High Risk"：** 本技能读取、重写并备份一个用户指定的文件。原地文件重写会触发通用风险评分。这是已知的、有意的能力——无隐藏网络访问、无 shell 执行、仅明确命名的文件。见 `plugins/caveman-codebuddy/skills/caveman-compress/SECURITY.md` 的逐技能说明。
+- **Snyk 对 `caveman-compress` 标 "High Risk"：** 本技能读取、重写并备份一个用户指定的文件。原地文件重写会触发通用风险评分。这是已知的、有意的能力——无隐藏网络访问、无 shell 执行、仅明确命名的文件。见 `plugins/caveman/skills/caveman-compress/SECURITY.md` 的逐技能说明。
 - **Hook 脚本因子进程/文件 I/O 模式被标记：** hook 调用 `node` 解析 stdin JSON 并发出 stdout JSON。它们不 spawn 任意进程、不读文档化路径之外的文件、并在任何错误时 fail open（SessionStart/UserPromptSubmit）或 fail closed（PreToolUse 安全防护）。
