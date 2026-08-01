@@ -1,0 +1,9 @@
+{
+  "name": "caveman-omp",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Caveman OMP extension — ultra-compressed communication mode",
+  "omp": {
+    "extensions": ["./index.ts"]
+  }
+}

@@ -26,7 +26,8 @@
     "caveman-codebuddy": "./scripts/install-codebuddy.js",
     "caveman-trae": "./scripts/install-trae.js",
     "caveman-qwen": "./scripts/install-qwen.js",
-    "caveman-qoder": "./scripts/install-qoder.js"
+    "caveman-qoder": "./scripts/install-qoder.js",
+    "caveman-omp": "./scripts/install-omp.js"
   },
   "scripts": {
     "install:zcode": "node ./scripts/install-zcode.js",
@@ -34,6 +35,7 @@
     "install:trae": "node ./scripts/install-trae.js",
     "install:qwen": "node ./scripts/install-qwen.js",
     "install:qoder": "node ./scripts/install-qoder.js",
+    "install:omp": "node ./scripts/install-omp.js",
     "sync:shared": "node ./scripts/sync-shared.js",
     "postinstall": "node ./scripts/setup-git-hooks.js && node ./scripts/postinstall.js --check"
   },
@@ -44,6 +46,7 @@
     "scripts/install-trae.js",
     "scripts/install-qwen.js",
     "scripts/install-qoder.js",
+    "scripts/install-omp.js",
     "scripts/postinstall.js",
     "scripts/sync-shared.js",
     "scripts/setup-git-hooks.js",
