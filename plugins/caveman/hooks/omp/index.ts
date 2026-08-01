@@ -28,6 +28,26 @@ import {
 
 const INDEPENDENT_MODES = new Set(['commit', 'review', 'compress']);
 
+// ── Chinese mode labels ────────────────────────────────────────────────────────
+
+const MODE_LABELS: Record<string, string> = {
+  'full': '压缩',
+  'lite': '精简',
+  'ultra': '极限',
+  'wenyan': '文言',
+  'wenyan-lite': '文言精简',
+  'wenyan-ultra': '文言极限',
+  'off': '关闭',
+  'commit': '提交',
+  'review': '审查',
+  'compress': '压缩文件',
+};
+
+// ── Refresh timer ─────────────────────────────────────────────────────────────
+
+let refreshTimer: NodeJS.Timeout | null = null;
+let statusCtx: { ui: { setStatus: (key: string, text: string) => void } } | null = null;
+
 // ── Minimal inline types ─────────────────────────────────────────────────────
 // These mirror the relevant subset of @oh-my-pi/pi-coding-agent's ExtensionAPI
 // and event shapes. At runtime OMP provides the real implementations.
@@ -138,12 +158,37 @@ function parseCavemanModeArg(args: string): string | null {
 
 function updateStatusLine(ctx: { ui: { setStatus: (key: string, text: string) => void } }): void {
   const mode = getActiveMode() || 'off';
+  const label = MODE_LABELS[mode] || mode;
   const lifetime = readLifetimeBadge();
-  const parts = [`⛏ [${mode}]`];
-  if (lifetime > 0) {
-    parts.push(`💰 ${fmtShort(lifetime)}`);
+  const session = computeStats({ lifetime: false });
+
+  const parts = [`⛏ ${label}`];
+  // 当前会话节省
+  if (session.found && session.saved > 0) {
+    parts.push(`📊 ${fmtShort(session.saved)}`);
   }
+  // 已节省总量（始终显示）
+  parts.push(`💰 ${fmtShort(lifetime)}`);
+
   ctx.ui.setStatus('caveman', parts.join(' '));
+}
+
+function startRefreshTimer(ctx: { ui: { setStatus: (key: string, text: string) => void } }): void {
+  stopRefreshTimer();
+  statusCtx = ctx;
+  refreshTimer = setInterval(() => {
+    if (statusCtx) {
+      updateStatusLine(statusCtx);
+    }
+  }, 30_000);
+}
+
+function stopRefreshTimer(): void {
+  if (refreshTimer !== null) {
+    clearInterval(refreshTimer);
+    refreshTimer = null;
+  }
+  statusCtx = null;
 }
 
 function fmtShort(n: number): string {
@@ -174,6 +219,7 @@ export default function cavemanExtension(pi: ExtensionAPI): void {
       }
     }
     updateStatusLine(ctx);
+    startRefreshTimer(ctx);
   });
 
   // ─── User input ───────────────────────────────────────────────────────────
@@ -242,12 +288,14 @@ export default function cavemanExtension(pi: ExtensionAPI): void {
         }
         case 'caveman-statusline': {
           const mode = getActiveMode() || 'off';
+          const label = MODE_LABELS[mode] || mode;
           const lifetime = readLifetimeBadge();
-          const parts = [`⛏ [${mode}]`];
-          if (lifetime > 0) parts.push(`💰 ${fmtShort(lifetime)}`);
-          pi.sendMessage(`Caveman status: ${parts.join(' ')}`, {
-            deliverAs: 'steer',
-          });
+          const session = computeStats({ lifetime: false });
+          let msg = `Caveman status: ${label} [${mode}] | lifetime: ${fmtShort(lifetime)} tokens`;
+          if (session.found) {
+            msg += ` | session: ${fmtShort(session.saved)} saved / ${fmtShort(session.input + session.output)} total`;
+          }
+          pi.sendMessage(msg, { deliverAs: 'steer' });
           break;
         }
       }
@@ -295,6 +343,7 @@ export default function cavemanExtension(pi: ExtensionAPI): void {
 
   // ─── Session stop ─────────────────────────────────────────────────────────
   pi.on('session_stop', async () => {
+    stopRefreshTimer();
     const mode = getActiveMode();
     if (!mode || mode === 'off') return;
 
@@ -338,6 +387,7 @@ export default function cavemanExtension(pi: ExtensionAPI): void {
 
   // ─── Session shutdown ─────────────────────────────────────────────────────
   pi.on('session_shutdown', async () => {
+    stopRefreshTimer();
     // Final stats flush
     try {
       const stats = computeStats({ lifetime: false });
@@ -427,8 +477,14 @@ export default function cavemanExtension(pi: ExtensionAPI): void {
     handler: async (_args: string, ctx: ExtensionCommandContext) => {
       updateStatusLine(ctx);
       const mode = getActiveMode() || 'off';
+      const label = MODE_LABELS[mode] || mode;
       const lifetime = readLifetimeBadge();
-      ctx.ui.notify(`Caveman status: ${mode} | lifetime: ${fmtShort(lifetime)} tokens`, 'info');
+      const session = computeStats({ lifetime: false });
+      let msg = `Caveman status: ${label} [${mode}] | lifetime: ${fmtShort(lifetime)} tokens`;
+      if (session.found) {
+        msg += ` | session: ${fmtShort(session.saved)} saved / ${fmtShort(session.input + session.output)} total`;
+      }
+      ctx.ui.notify(msg, 'info');
     },
   });
 }
