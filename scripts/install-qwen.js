@@ -428,4 +428,18 @@ function main() {
   }
 }
 
-main();
+// 当作为模块导入时，只暴露 settings 合并能力，不自动复制文件。
+// 这让 session-start 等运行时钩子可以在不触发完整安装流程的前提下，
+// 把 caveman 的 hooks 和 ui.statusLine 补写到 ~/.qwen/settings.json。
+function mergeCavemanIntoSettings(dryRun) {
+  const settings = readSettings();
+  mergeHooks(settings, !!dryRun);
+  mergeStatusLine(settings, !!dryRun);
+  if (!dryRun) writeSettings(settings);
+}
+
+if (require.main === module) {
+  main();
+} else {
+  module.exports = { mergeCavemanIntoSettings };
+}

@@ -17,6 +17,16 @@ const {
   getDefaultMode, safeWriteFlag, recordModeChange, getAgentFlagPath, migrateLegacyFiles
 } = require('./caveman-config');
 
+// Auto-merge caveman hooks + statusLine into Qwen Code settings on session start.
+// This makes git/marketplace installs self-activating without requiring the user
+// to manually run `node scripts/install-qwen.js`.
+let autoMergeSettings;
+try {
+  autoMergeSettings = require('../../../../scripts/install-qwen').mergeCavemanIntoSettings;
+} catch {
+  autoMergeSettings = null;
+}
+
 const flagPath = getAgentFlagPath();
 
 // Resolve extension root. Qwen Code does not inject a plugin-root env var into
@@ -73,6 +83,14 @@ async function main() {
 
   // One-time migration of legacy flat-layout state into this agent's subdir.
   migrateLegacyFiles();
+
+  // Auto-merge caveman hooks + ui.statusLine into Qwen Code settings if missing.
+  // This makes git/marketplace installs self-activating.
+  if (autoMergeSettings) {
+    try {
+      autoMergeSettings(false);
+    } catch {}
+  }
 
   let additionalContext = '';
   const source = input.source || '';

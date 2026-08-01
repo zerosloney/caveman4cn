@@ -25,12 +25,40 @@
 
 const path = require('path');
 const fs = require('fs');
+const os = require('os');
 const {
   getDefaultMode, safeWriteFlag, readFlag, recordModeChange, VALID_MODES, getAgentFlagPath, getAgentPrevFlagPath
 } = require('./caveman-config');
 const {
   computeStats, formatStats, writeLifetimeBadge
 } = require('./caveman-stats.js');
+
+// Detect whether Qwen Code settings already has caveman hooks registered.
+// If not, we hint the user to run the installer so hooks/statusLine can activate.
+const SETTINGS_FILE = path.join(os.homedir(), '.qwen', 'settings.json');
+function hasCavemanHooks() {
+  try {
+    const raw = fs.readFileSync(SETTINGS_FILE, 'utf-8').trim();
+    if (!raw) return false;
+    const settings = JSON.parse(raw);
+    if (!settings || !settings.hooks || typeof settings.hooks !== 'object') return false;
+    for (const event of Object.keys(settings.hooks)) {
+      const arr = settings.hooks[event];
+      if (!Array.isArray(arr)) continue;
+      for (const group of arr) {
+        if (!group || !Array.isArray(group.hooks)) continue;
+        for (const h of group.hooks) {
+          if (h && typeof h.command === 'string' && /caveman(?:-qwen)?\/hooks\//.test(h.command)) {
+            return true;
+          }
+        }
+      }
+    }
+    return false;
+  } catch {
+    return false;
+  }
+}
 
 // Modes handled by their own slash commands — not selectable via /caveman <arg>.
 const INDEPENDENT_MODES = new Set(['commit', 'review', 'compress']);
@@ -126,6 +154,11 @@ function parseSlashCommand(prompt) {
     }
   }
 
+  // /caveman-install — hint user to run installer if settings are missing.
+  if (cmd === '/caveman-install' || cmd === '/caveman:caveman-install') {
+    return '__install__';
+  }
+
   // /caveman [lite|full|ultra|wenyan|...]
   if (cmd === '/caveman' || cmd === '/caveman:caveman') {
     if (!arg) return getDefaultMode();
@@ -185,7 +218,20 @@ async function main() {
   // 1. Try slash command (/caveman, /caveman-commit, etc.)
   const slashMode = parseSlashCommand(lowerPrompt);
   if (slashMode) {
-    if (slashMode === 'off') {
+    if (slashMode === '__install__') {
+      const installCmd = 'node ' + path.join(process.env.USERPROFILE || process.env.HOME || '.', '.qwen', 'extensions', 'caveman', 'scripts', 'install-qwen.js').replace(/\\/g, '/');
+      const reason = 'Caveman hooks not yet merged into Qwen Code settings. Run this command in a terminal to activate:\n\n' + installCmd + '\n\nThen restart Qwen Code or run /extensions to reload.';
+      process.stderr.write('[caveman] settings missing hooks, hinting install command\n');
+      process.stdout.write(JSON.stringify({
+        decision: 'block',
+        reason,
+        hookSpecificOutput: {
+          hookEventName: input.hook_event_name || 'UserPromptSubmit',
+          additionalContext: reason,
+        },
+      }));
+      return;
+    } else if (slashMode === 'off') {
       recordModeChange(null);
       try { fs.unlinkSync(flagPath); } catch (e) {}
       try { fs.unlinkSync(prevPath); } catch (e) {}
