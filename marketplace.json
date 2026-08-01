@@ -1,0 +1,24 @@
+{
+  "name": "master0071",
+  "description": "Caveman plugin marketplace for ZCode — ultra-compressed communication mode.",
+  "owner": {
+    "name": "master0071",
+    "email": "master0071@users.noreply.github.com"
+  },
+  "plugins": [
+    {
+      "name": "caveman",
+      "description": "Ultra-compressed communication mode for ZCode. Cut filler. Keep technical accuracy. Supports lite, full, ultra, wenyan intensity levels.",
+      "version": "0.1.0",
+      "source": "./plugins/caveman",
+      "category": "productivity",
+      "author": {
+        "name": "master0071",
+        "url": "https://github.com/zerosloney/caveman4cn"
+      },
+      "homepage": "https://github.com/zerosloney/caveman4cn",
+      "license": "MIT",
+      "keywords": ["productivity", "communication", "brevity", "zcode"]
+    }
+  ]
+}

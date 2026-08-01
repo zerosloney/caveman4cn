@@ -53,6 +53,7 @@
     ".codebuddy-plugin/marketplace.json",
     ".qoder-plugin/marketplace.json",
     ".zcode-plugin/marketplace.json",
+    "marketplace.json",
     "AGENTS.md",
     "README.md",
     "LICENSE"

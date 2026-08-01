@@ -65,7 +65,7 @@ node -c plugins/caveman/hooks/qoder/*.js
 node -c plugins/caveman/hooks/qwen/*.js
 
 # 校验 JSON 配置（所有市场清单 + 插件清单 + hooks.json）
-node -e "['.codebuddy-plugin/marketplace.json','.qoder-plugin/marketplace.json','.zcode-plugin/marketplace.json','plugins/caveman/.codebuddy-plugin/plugin.json','plugins/caveman/.zcode-plugin/plugin.json','plugins/caveman/.trae-plugin/plugin.json','plugins/caveman/.qoder-plugin/plugin.json','plugins/caveman/qwen-extension.json','plugins/caveman/hooks/codebuddy/hooks.json','plugins/caveman/hooks/zcode/hooks.json','plugins/caveman/hooks/trae/hooks.json','plugins/caveman/hooks/qoder/hooks.json'].forEach(f=>JSON.parse(require('fs').readFileSync(f,'utf8'))); console.log('all JSON valid')"
+node -e "['marketplace.json','.codebuddy-plugin/marketplace.json','.qoder-plugin/marketplace.json','.zcode-plugin/marketplace.json','plugins/caveman/.codebuddy-plugin/plugin.json','plugins/caveman/.zcode-plugin/plugin.json','plugins/caveman/.trae-plugin/plugin.json','plugins/caveman/.qoder-plugin/plugin.json','plugins/caveman/qwen-extension.json','plugins/caveman/hooks/codebuddy/hooks.json','plugins/caveman/hooks/zcode/hooks.json','plugins/caveman/hooks/trae/hooks.json','plugins/caveman/hooks/qoder/hooks.json'].forEach(f=>JSON.parse(require('fs').readFileSync(f,'utf8'))); console.log('all JSON valid')"
 
 # 模拟一个 hook（CodeBuddy）
 echo '{"hook_event_name":"UserPromptSubmit","prompt":"/caveman-stats"}' | node plugins/caveman/hooks/codebuddy/user-prompt.js
