@@ -61,9 +61,12 @@ function isCavemanActive() {
 // Near-real-time stats snapshot for the statusline. Computes the current
 // session's token usage and persists it, and refreshes the lifetime badge.
 // Wrapped in try/catch so stats failures never affect the Stop decision.
-function recordSnapshot() {
+function recordSnapshot(transcriptPath) {
   try {
-    const session = computeStats({ lifetime: false });
+    // CodeBuddy hands Stop hooks the exact transcript for this session. Use it
+    // rather than guessing by mtime — the guess can land on another project's
+    // session when several are open.
+    const session = computeStats({ lifetime: false, transcript: transcriptPath });
     if (session.found) writeSessionSnapshot(session);
     const lifetime = computeStats({ lifetime: true });
     writeLifetimeBadge(lifetime);
@@ -128,7 +131,7 @@ async function main() {
   // Record a near-real-time session snapshot + update the lifetime badge so
   // the statusline reflects the latest turn's token usage. Best-effort: any
   // failure here must NOT alter the Stop decision.
-  recordSnapshot();
+  recordSnapshot(input.transcript_path);
 
   if (!isCavemanActive()) {
     // Caveman not active — allow through

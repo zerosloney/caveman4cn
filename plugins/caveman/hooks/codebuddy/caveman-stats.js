@@ -3,7 +3,7 @@
 // Reads CodeBuddy session transcripts (JSONL under ~/.codebuddy/projects/) and
 // sums token usage from model records (payload.usage). No AI estimation; real receipts.
 //
-// Exported: computeStats(opts) -> { turns, input, output, baseline, saved, pct, found }
+// Exported: computeStats(opts) -> { turns, input, output, saved, found }
 //           formatStats(stats)   -> string
 //
 // Used by caveman-mode-tracker.js (UserPromptSubmit hook). Designed to require
@@ -37,36 +37,54 @@ const DATA_DIR = getAgentDataDir();
 const LIFETIME_FILE = getAgentLifetimeFile();
 const SNAPSHOT_FILE = getAgentSnapshotFile();
 
-// Empirical caveman compression vs verbose baseline. README promises ~65%.
-// Used only for the *baseline* estimate line — input/output come from real logs.
-const BASELINE_OUTPUT_MULTIPLIER = 2.86; // verbose ≈ 2.86x caveman output
+// Assumed verbose-to-caveman output ratio, back-derived from the README's "~65%"
+// claim. There is no control run behind it: nothing here measures what the same
+// prompts would have cost without caveman. Used only for the "Est. saved" line.
+const BASELINE_OUTPUT_MULTIPLIER = 2.86;
 
 /**
- * Find the "current" session transcript: the most recently modified non-empty
- * .jsonl across all candidate roots. Empty (just-created) session files are
- * skipped so /caveman-stats reports the last real conversation, not a 0-byte stub.
+ * Find the "current" session transcript: the most recently modified .jsonl that
+ * actually carries token-usage records.
+ *
+ * Both guards matter. The scan must recurse, because real transcripts live one
+ * level down (~/.codebuddy/projects/<encoded>/<uuid>.jsonl) — a flat readdir of
+ * the roots never sees them. And the newest .jsonl is not necessarily a
+ * transcript: ~/.codebuddy/history.jsonl is the prompt-history file, is touched
+ * on every single prompt, and contains no usage records. Picking it silently
+ * zeroed out every per-session stat.
  */
 function findCurrentTranscript() {
-  let best = null;
-  for (const root of candidateRoots()) {
-    let entries;
+  const files = [];
+  for (const file of listTranscripts()) {
     try {
-      entries = fs.readdirSync(root, { withFileTypes: true });
-    } catch {
-      continue;
-    }
-    for (const e of entries) {
-      if (!e.isFile() || !e.name.endsWith('.jsonl')) continue;
-      const full = path.join(root, e.name);
-      try {
-        const stat = fs.statSync(full);
-        // Skip empty files — freshly-created session stubs with no usage records.
-        if (stat.size === 0) continue;
-        if (!best || stat.mtimeMs > best.mtime) best = { full, mtime: stat.mtimeMs };
-      } catch {}
-    }
+      const stat = fs.statSync(file);
+      if (stat.size === 0) continue;
+      files.push({ file, mtime: stat.mtimeMs });
+    } catch {}
   }
-  return best ? best.full : null;
+  files.sort((a, b) => b.mtime - a.mtime);
+  for (const { file } of files) {
+    if (hasUsageRecords(file)) return file;
+  }
+  return null;
+}
+
+/** True if a .jsonl file contains at least one token-usage record. */
+function hasUsageRecords(file) {
+  let raw;
+  try {
+    raw = fs.readFileSync(file, 'utf-8');
+  } catch {
+    return false;
+  }
+  for (const line of raw.split('\n')) {
+    const trimmed = line.trim();
+    if (!trimmed) continue;
+    try {
+      if (extractUsage(JSON.parse(trimmed))) return true;
+    } catch {}
+  }
+  return false;
 }
 
 /**
@@ -74,19 +92,29 @@ function findCurrentTranscript() {
  * roots (lifetime view).
  */
 function listTranscripts(projectDir) {
-  const out = [];
+  // Candidate roots overlap (~/.codebuddy contains ~/.codebuddy/projects), so
+  // dedupe by resolved path or lifetime totals would double-count. Each root is
+  // walked in its own try/catch: one missing root must not abort the rest.
+  const seen = new Set();
   const roots = projectDir ? [projectDir] : candidateRoots();
-  try {
-    const walk = (dir) => {
-      for (const e of fs.readdirSync(dir, { withFileTypes: true })) {
-        const full = path.join(dir, e.name);
-        if (e.isDirectory()) walk(full);
-        else if (e.isFile() && e.name.endsWith('.jsonl')) out.push(full);
+  const walk = (dir) => {
+    for (const e of fs.readdirSync(dir, { withFileTypes: true })) {
+      const full = path.join(dir, e.name);
+      if (e.isDirectory()) {
+        try {
+          walk(full);
+        } catch {}
+      } else if (e.isFile() && e.name.endsWith('.jsonl')) {
+        seen.add(path.resolve(full));
       }
-    };
-    for (const r of roots) walk(r);
-  } catch {}
-  return out;
+    }
+  };
+  for (const r of roots) {
+    try {
+      walk(r);
+    } catch {}
+  }
+  return [...seen];
 }
 
 /**
@@ -215,7 +243,11 @@ function computeStats(opts = {}) {
   if (lifetime) {
     files = listTranscripts();
   } else {
-    const cur = opts.transcript || findCurrentTranscript();
+    // An explicit transcript is only trusted once it actually carries usage
+    // records — early in a session the host's path may point at a file that has
+    // not been flushed yet, which would report a bogus zero session.
+    let cur = opts.transcript && hasUsageRecords(opts.transcript) ? opts.transcript : null;
+    if (!cur) cur = findCurrentTranscript();
     files = cur ? [cur] : [];
   }
   if (!files.length) {
@@ -223,9 +255,7 @@ function computeStats(opts = {}) {
       turns: 0,
       input: 0,
       output: 0,
-      baseline: 0,
       saved: 0,
-      pct: 0,
       requests: 0,
       cacheRead: 0,
       cacheWrite: 0,
@@ -235,19 +265,17 @@ function computeStats(opts = {}) {
   }
   const { totals, turns } = sumUsage(files);
 
-  // Baseline = what output would have been without caveman compression.
-  // Real input stays the same; only output is compressed by caveman style.
-  const baselineOutput = Math.round(totals.output * BASELINE_OUTPUT_MULTIPLIER);
-  const saved = Math.max(0, baselineOutput - totals.output);
-  const pct = baselineOutput > 0 ? Math.round((saved / baselineOutput) * 100) : 0;
+  // Estimate, not a measurement: there is no non-caveman control run to compare
+  // against, so this is just the real output scaled by a fixed constant. A
+  // savings *percentage* derived from it would cancel out to the same number on
+  // every session, which is why none is computed. formatStats says so plainly.
+  const saved = Math.round(totals.output * (BASELINE_OUTPUT_MULTIPLIER - 1));
 
   return {
     turns,
     input: totals.input,
     output: totals.output,
-    baseline: baselineOutput,
     saved,
-    pct,
     requests: totals.requests,
     cacheRead: totals.cacheRead,
     cacheWrite: totals.cacheWrite,
@@ -261,24 +289,31 @@ function fmt(n) {
 }
 
 /**
- * Human-readable block matching README example:
+ * Human-readable block:
  *   Session: 47 turns
- *   Input:   12,304 tokens
- *   Output:  3,891 tokens (caveman)
- *   Baseline: 11,247 tokens (estimated without caveman)
- *   Saved:    7,356 tokens (~65%)
+ *   Input:      12,304 tokens
+ *   Output:     3,891 tokens
+ *   Est. saved: 7,237 tokens
+ *
+ * Turns/input/output are real receipts from the log. "Est. saved" is a guess,
+ * and the trailing note says so — the old output claimed a "~65%" savings rate
+ * that was algebraically fixed and identical on every session.
  */
 function formatStats(stats) {
   if (!stats.found) {
     return 'No session log found yet. Run a few turns, then /caveman-stats again.';
   }
   const scope = stats.lifetime ? 'Lifetime' : 'Session';
+  const extra = (BASELINE_OUTPUT_MULTIPLIER - 1).toFixed(2);
   return [
     `${scope}: ${fmt(stats.turns)} turns`,
-    `Input:    ${fmt(stats.input)} tokens`,
-    `Output:   ${fmt(stats.output)} tokens (caveman)`,
-    `Baseline: ${fmt(stats.baseline)} tokens (estimated without caveman)`,
-    `Saved:    ${fmt(stats.saved)} tokens (~${stats.pct}%)`,
+    `Input:      ${fmt(stats.input)} tokens`,
+    `Output:     ${fmt(stats.output)} tokens`,
+    `Est. saved: ${fmt(stats.saved)} tokens`,
+    '',
+    'Turns, input and output are read from the session log. "Est. saved" is not',
+    `measured: it assumes verbose output would run ${BASELINE_OUTPUT_MULTIPLIER}x longer, so it is`,
+    `always ${extra}x the output above no matter how terse the replies really were.`,
   ].join('\n');
 }
 
@@ -318,7 +353,6 @@ function writeSessionSnapshot(stats) {
       input: stats.input || 0,
       output: stats.output || 0,
       saved: stats.saved || 0,
-      pct: stats.pct || 0,
       requests: stats.requests || 0,
       updatedAt: new Date().toISOString(),
     };

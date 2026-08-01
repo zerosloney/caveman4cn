@@ -163,10 +163,67 @@ function formatShort(n) {
   return String(n);
 }
 
-/** Format a percentage string (e.g. 65 → "65%"). Returns null if invalid. */
-function formatPct(n) {
-  if (n == null || n <= 0) return null;
-  return String(Math.round(n)) + '%';
+/** Round to an integer 0-100, or null if not a finite number. */
+function clampPct(n) {
+  if (!Number.isFinite(n)) return null;
+  return Math.max(0, Math.min(100, Math.round(n)));
+}
+
+/**
+ * Remaining context percentage. Host payloads differ:
+ *   - Claude Code: context_window is a number, metrics.total_tokens is the usage.
+ *   - CodeBuddy: context_window is an object with context_window_size,
+ *     total_input_tokens, current_usage and pre-computed *_percentage fields.
+ * Returns null when the host sends neither shape.
+ */
+function getRemainingContextPct(ctx, usedTokens) {
+  if (ctx == null) return null;
+
+  if (typeof ctx === 'object') {
+    if (typeof ctx.remaining_percentage === 'number') {
+      return clampPct(ctx.remaining_percentage);
+    }
+    if (typeof ctx.used_percentage === 'number') {
+      return clampPct(100 - ctx.used_percentage);
+    }
+    const size = ctx.context_window_size;
+    const used = ctx.current_usage?.input_tokens ?? ctx.total_input_tokens;
+    if (typeof size === 'number' && size > 0 && typeof used === 'number') {
+      return clampPct((1 - used / size) * 100);
+    }
+    return null;
+  }
+
+  if (typeof ctx === 'number' && ctx > 0 && typeof usedTokens === 'number') {
+    return clampPct((1 - usedTokens / ctx) * 100);
+  }
+  return null;
+}
+
+/**
+ * Live input/output token counts from the host payload. CodeBuddy puts session
+ * totals on the context_window object; the per-turn numbers live under
+ * current_usage. Returns null when the host sends neither.
+ */
+function getLiveTokens(ctx) {
+  if (!ctx || typeof ctx !== 'object') return null;
+  const input = ctx.total_input_tokens ?? ctx.current_usage?.input_tokens;
+  const output = ctx.total_output_tokens ?? ctx.current_usage?.output_tokens;
+  if (typeof input !== 'number' || typeof output !== 'number') return null;
+  if (input === 0 && output === 0) return null;
+  return { input, output };
+}
+
+/** Format a millisecond duration as "1h2m", "12m3s" or "45s". */
+function formatDuration(ms) {
+  if (!Number.isFinite(ms) || ms < 1000) return null;
+  const total = Math.floor(ms / 1000);
+  const h = Math.floor(total / 3600);
+  const m = Math.floor((total % 3600) / 60);
+  const s = total % 60;
+  if (h > 0) return `${h}h${m}m`;
+  if (m > 0) return `${m}m${s}s`;
+  return `${s}s`;
 }
 
 // ── User config ─────────────────────────────────────────────────────────────
@@ -185,6 +242,8 @@ function loadUserPrefs() {
     showSessionSaved: prefs.showSessionSaved !== false,
     showCost: prefs.showCost === true,
     showContext: prefs.showContext === true,
+    showDuration: prefs.showDuration === true,
+    showLines: prefs.showLines === true,
     modeColor: prefs.modeColor || C.green,
     dirColor: prefs.dirColor || C.blue,
     gitColor: prefs.gitColor || C.green,
@@ -194,6 +253,8 @@ function loadUserPrefs() {
     sessionSavedColor: prefs.sessionSavedColor || C.green,
     costColor: prefs.costColor || C.yellow,
     contextColor: prefs.contextColor || C.cyan,
+    durationColor: prefs.durationColor || C.gray,
+    linesColor: prefs.linesColor || C.green,
   };
 }
 
@@ -232,8 +293,12 @@ async function main() {
 
   // Cost is an object { total_cost_usd, ... } per the statusline contract.
   const cost = input.cost?.total_cost_usd || null;
-  const ctxWindow = input.context_window || input.metrics?.context_window || null;
-  const ctxUsed = input.metrics?.total_tokens || null;
+  const ctxRaw = input.context_window ?? input.metrics?.context_window ?? null;
+  const ctxRemainingPct = getRemainingContextPct(ctxRaw, input.metrics?.total_tokens);
+  const liveTokens = getLiveTokens(ctxRaw);
+  const durationMs = input.cost?.total_duration_ms;
+  const linesAdded = input.cost?.total_lines_added || 0;
+  const linesRemoved = input.cost?.total_lines_removed || 0;
 
   const parts = [];
 
@@ -252,20 +317,24 @@ async function main() {
     parts.push(`${prefs.gitColor}🌿 ${branch}${C.reset}`);
   }
 
-  if (prefs.showSessionTokens && snapshot) {
-    const inShort = formatShort(snapshot.input);
-    const outShort = formatShort(snapshot.output);
+  if (prefs.showSessionTokens) {
+    // Prefer the host's live counts — the snapshot is only written by the Stop
+    // hook, so it stays at zero for the whole of the first session.
+    const tokens = liveTokens || snapshot;
+    const inShort = formatShort(tokens?.input);
+    const outShort = formatShort(tokens?.output);
     if (inShort && outShort) {
       parts.push(`${prefs.sessionTokensColor}📊 ${inShort}→${outShort}${C.reset}`);
     }
   }
 
   if (prefs.showSessionSaved && snapshot) {
+    // Token count only — no percentage. snapshot.pct is derived from a fixed
+    // BASELINE_OUTPUT_MULTIPLIER, so it algebraically reduces to the same
+    // constant on every session and carries no information.
     const savedShort = formatShort(snapshot.saved);
-    const pct = formatPct(snapshot.pct);
     if (savedShort) {
-      const label = pct ? `${savedShort} (${pct})` : savedShort;
-      parts.push(`${prefs.sessionSavedColor}💡 ${label}${C.reset}`);
+      parts.push(`${prefs.sessionSavedColor}💡 ${savedShort}${C.reset}`);
     }
   }
 
@@ -277,9 +346,17 @@ async function main() {
     parts.push(`${prefs.costColor}💲 ${costStr}${C.reset}`);
   }
 
-  if (prefs.showContext && ctxWindow && ctxUsed != null) {
-    const remaining = Math.max(0, Math.round((1 - ctxUsed / ctxWindow) * 100));
-    parts.push(`${prefs.contextColor}📉 ${remaining}%${C.reset}`);
+  if (prefs.showDuration) {
+    const dur = formatDuration(durationMs);
+    if (dur) parts.push(`${prefs.durationColor}⏱ ${dur}${C.reset}`);
+  }
+
+  if (prefs.showLines && (linesAdded > 0 || linesRemoved > 0)) {
+    parts.push(`${prefs.linesColor}📝 +${linesAdded}/-${linesRemoved}${C.reset}`);
+  }
+
+  if (prefs.showContext && ctxRemainingPct != null) {
+    parts.push(`${prefs.contextColor}📉 ${ctxRemainingPct}%${C.reset}`);
   }
 
   if (prefs.showSavings && savings != null && savings > 0) {

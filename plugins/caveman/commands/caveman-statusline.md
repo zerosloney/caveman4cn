@@ -43,7 +43,7 @@ Config shape:
 
    示例输出：
    ```
-   ⛏ [full] 📁 my-project  🌿 main  📊 12.3k→3.9k  💡 7.3k (65%)  💰 12.4k
+   ⛏ [full] 📁 my-project  🌿 main  📊 12.3k→3.9k  💡 7.3k  💰 12.4k
    ```
 
 3. **If not configured**, show the setup instructions:

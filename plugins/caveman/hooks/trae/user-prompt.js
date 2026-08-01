@@ -58,7 +58,7 @@ function handleStatsPrompt(input, prompt) {
       body = 'No Trae session log found yet.';
     } else {
       const scope = stats.lifetime ? 'Lifetime' : 'Session';
-      body = `⛏ ${scope}: ${stats.saved.toLocaleString('en-US')} tokens saved (~${stats.pct}%) via caveman mode`;
+      body = `⛏ ${scope}: ~${stats.saved.toLocaleString('en-US')} tokens saved via caveman mode (rough estimate)`;
     }
   } else {
     body = formatStats(stats);

@@ -159,5 +159,5 @@ Caveman 平均削减约 46%。同样的指令。同样的准确度。更少的�
 
 本技能是 [caveman](https://github.com/JuliusBrussee/caveman) 工具包的一部分——让 Claude 用更少 token 而不失准确度。
 
-- **caveman** —— 让 Claude *说话*像 caveman（削减约 65% 回复 token）
+- **caveman** —— 让 Claude *说话*像 caveman（大幅削减回复 token，比例未实测，仅为估算）
 - **caveman-compress** —— 让 Claude *读*得更少（削减约 46% 上下文 token）

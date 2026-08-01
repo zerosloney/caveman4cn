@@ -3,7 +3,7 @@
 // Reads ZCode session logs (JSONL transcripts) and sums token usage from
 // `model_request` records (payload.usage). No AI estimation; real receipts.
 //
-// Exported: computeStats(opts) -> { turns, input, output, baseline, saved, pct }
+// Exported: computeStats(opts) -> { turns, input, output, saved, found }
 //           formatStats(stats, opts) -> string
 //
 // Used by caveman-mode-tracker.js (UserPromptSubmit hook) and reusable for a
@@ -26,9 +26,10 @@ const DATA_DIR = getAgentDataDir();
 const LIFETIME_FILE = getAgentLifetimeFile();
 const SNAPSHOT_FILE = getAgentSnapshotFile();
 
-// Empirical caveman compression vs verbose baseline. README promises ~65%.
-// Used only for the *baseline* estimate line — input/output come from real logs.
-const BASELINE_OUTPUT_MULTIPLIER = 2.86; // verbose ≈ 2.86x caveman output
+// Assumed verbose-to-caveman output ratio, back-derived from the README's "~65%"
+// claim. There is no control run behind it: nothing here measures what the same
+// prompts would have cost without caveman. Used only for the "Est. saved" line.
+const BASELINE_OUTPUT_MULTIPLIER = 2.86;
 
 /**
  * Find the directory for the "current" session: the most recently modified
@@ -140,9 +141,7 @@ function computeStats(opts = {}) {
       turns: 0,
       input: 0,
       output: 0,
-      baseline: 0,
       saved: 0,
-      pct: 0,
       requests: 0,
       cacheRead: 0,
       cacheWrite: 0,
@@ -152,19 +151,17 @@ function computeStats(opts = {}) {
   }
   const { totals, turns } = sumUsage(files);
 
-  // Baseline = what output would have been without caveman compression.
-  // Real input stays the same; only output is compressed by caveman style.
-  const baselineOutput = Math.round(totals.output * BASELINE_OUTPUT_MULTIPLIER);
-  const saved = Math.max(0, baselineOutput - totals.output);
-  const pct = baselineOutput > 0 ? Math.round((saved / baselineOutput) * 100) : 0;
+  // Estimate, not a measurement: there is no non-caveman control run to compare
+  // against, so this is just the real output scaled by a fixed constant. A
+  // savings *percentage* derived from it would cancel out to the same number on
+  // every session, which is why none is computed. formatStats says so plainly.
+  const saved = Math.round(totals.output * (BASELINE_OUTPUT_MULTIPLIER - 1));
 
   return {
     turns,
     input: totals.input,
     output: totals.output,
-    baseline: baselineOutput,
     saved,
-    pct,
     requests: totals.requests,
     cacheRead: totals.cacheRead,
     cacheWrite: totals.cacheWrite,
@@ -178,24 +175,31 @@ function fmt(n) {
 }
 
 /**
- * Human-readable block matching README example:
+ * Human-readable block:
  *   Session: 47 turns
- *   Input:   12,304 tokens
- *   Output:  3,891 tokens (caveman)
- *   Baseline: 11,247 tokens (estimated without caveman)
- *   Saved:    7,356 tokens (~65%)
+ *   Input:      12,304 tokens
+ *   Output:     3,891 tokens
+ *   Est. saved: 7,237 tokens
+ *
+ * Turns/input/output are real receipts from the log. "Est. saved" is a guess,
+ * and the trailing note says so — the old output claimed a "~65%" savings rate
+ * that was algebraically fixed and identical on every session.
  */
 function formatStats(stats) {
   if (!stats.found) {
     return 'No session log found yet. Run a few turns, then /caveman-stats again.';
   }
   const scope = stats.lifetime ? 'Lifetime' : 'Session';
+  const extra = (BASELINE_OUTPUT_MULTIPLIER - 1).toFixed(2);
   return [
     `${scope}: ${fmt(stats.turns)} turns`,
-    `Input:    ${fmt(stats.input)} tokens`,
-    `Output:   ${fmt(stats.output)} tokens (caveman)`,
-    `Baseline: ${fmt(stats.baseline)} tokens (estimated without caveman)`,
-    `Saved:    ${fmt(stats.saved)} tokens (~${stats.pct}%)`,
+    `Input:      ${fmt(stats.input)} tokens`,
+    `Output:     ${fmt(stats.output)} tokens`,
+    `Est. saved: ${fmt(stats.saved)} tokens`,
+    '',
+    'Turns, input and output are read from the session log. "Est. saved" is not',
+    `measured: it assumes verbose output would run ${BASELINE_OUTPUT_MULTIPLIER}x longer, so it is`,
+    `always ${extra}x the output above no matter how terse the replies really were.`,
   ].join('\n');
 }
 
@@ -237,7 +241,6 @@ function writeSessionSnapshot(stats) {
       input: stats.input || 0,
       output: stats.output || 0,
       saved: stats.saved || 0,
-      pct: stats.pct || 0,
       requests: stats.requests || 0,
       updatedAt: new Date().toISOString(),
     };
