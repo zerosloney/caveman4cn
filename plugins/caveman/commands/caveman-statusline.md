@@ -1,5 +1,5 @@
 ---
-description: Help configure status line for the host agent. Check current config, show setup instructions, and optionally write settings.json. 中文：帮助配置状态行，检测当前宿主，显示状态、配置步骤、可选写入 settings.json
+description: 帮助配置状态行，检测当前宿主，显示状态、配置步骤、可选写入 settings.json
 argument-hint: "[--setup|--status]"
 ---
 

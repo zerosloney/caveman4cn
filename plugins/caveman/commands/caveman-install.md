@@ -1,5 +1,5 @@
 ---
-description: Run the caveman installer for the detected host agent to merge hooks (and statusLine where supported) into its settings.json. 中文：为当前宿主运行 caveman 安装器，合并钩子（及状态行，若宿主支持）到其 settings.json。
+description: 为当前宿主运行 caveman 安装器，合并钩子（及状态行，若宿主支持）到其 settings.json。
 argument-hint: "[--uninstall|--dry-run]"
 ---
 

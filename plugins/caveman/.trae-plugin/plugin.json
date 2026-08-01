@@ -2,7 +2,7 @@
   "_comment": "Documentational manifest only. Trae IDE does NOT scan for plugin.json or marketplace.json — its AI assets (skills/commands/hooks/rules) are loose files under ~/.trae-cn/ (global) and .trae/ (project). This file exists for repo consistency with .zcode-plugin/ and .codebuddy-plugin/, and to declare intent. The actual install is performed by scripts/install-trae.js, which lays assets into ~/.trae-cn/skills/, ~/.trae-cn/commands/, ~/.trae-cn/caveman/{hooks,tools,agents}/, and merges ~/.trae-cn/hooks.json.",
   "name": "caveman",
   "version": "0.1.0",
-  "description": "Ultra-compressed communication mode for Trae IDE. Cut filler. Keep technical accuracy. Supports intensity levels: lite, full, ultra, wenyan-lite, wenyan-full, wenyan-ultra.",
+  "description": "Trae IDE 的超压缩通信模式。删废话，保技术准确。支持 lite、full、ultra、wenyan-lite、wenyan-full、wenyan-ultra 强度级别。",
   "author": {
     "name": "master0071",
     "url": "https://github.com/zerosloney/caveman4cn"

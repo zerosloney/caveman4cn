@@ -1,7 +1,7 @@
 {
   "name": "caveman",
   "version": "0.1.0",
-  "description": "CodeBuddy plugin for caveman mode. Ultra-compressed communication for CodeBuddy agents.",
+  "description": "CodeBuddy 的 caveman 模式插件。为 CodeBuddy 代理提供超压缩通信。",
   "author": {
     "name": "master0071",
     "url": "https://github.com/zerosloney/caveman4cn"

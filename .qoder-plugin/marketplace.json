@@ -1,6 +1,6 @@
 {
   "name": "master0071",
-  "description": "Caveman plugin marketplace (qoder) — ultra-compressed communication mode. Add this repo in Qoder CLI to get caveman-qoder.",
+  "description": "Caveman 插件市场（qoder）——超压缩通信模式。在 Qoder CLI 添加本仓库以获取 caveman-qoder。",
   "owner": {
     "name": "master0071",
     "email": "master0071@users.noreply.github.com"
@@ -8,7 +8,7 @@
   "plugins": [
     {
       "name": "caveman",
-      "description": "Ultra-compressed communication mode for Qoder. Cut filler. Keep technical accuracy. Supports lite, full, ultra, wenyan intensity levels.",
+      "description": "Qoder 的超压缩通信模式。删废话，保技术准确。支持 lite、full、ultra、wenyan 强度级别。",
       "version": "0.1.0",
       "source": "./plugins/caveman",
       "category": "productivity",
