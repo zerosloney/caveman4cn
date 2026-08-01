@@ -24,7 +24,11 @@
 // Agent-isolated: each host (codebuddy/qwen/qoder/trae/zcode) writes its state
 // under ~/.caveman/<agent>/ so multiple agents on the same machine never clobber
 // each other. This shared script discovers the live agent at runtime instead of
-// assuming one (the old hardcoded 'qwen' made CodeBuddy's state invisible).
+// assuming one. Primary signal is __dirname — each host's installer places this
+// script under its own data dir (e.g. ~/.qwen/extensions/caveman/scripts/), so
+// the path itself names the agent without any cross-process coordination. Env
+// hints and an active-flag scan are fallbacks for the rare case where __dirname
+// carries no host marker.
 // Tolerates missing files, non-git directories, and malformed stdin.
 // Any error → output empty string (host displays nothing, not broken).
 
@@ -47,20 +51,37 @@ function detectAgentId() {
   // 1) Explicit override — handy for testing or custom hosts.
   if (process.env.CAVEMAN_AGENT) return process.env.CAVEMAN_AGENT;
 
-  // 2) Host env hints (CodeBuddy sets these for its CLI session).
+  // 2) Script location — the strongest race-free signal. Each host's installer
+  //    copies this script into its own data dir, so __dirname contains a host
+  //    marker (e.g. ~/.qwen/extensions/caveman/scripts/, ~/.codebuddy/plugins/
+  //    caveman/scripts/). This lets multiple agents run concurrently without
+  //    clobbering each other's state, which the old "first active flag wins"
+  //    scan could not do (it always returned whichever agent appeared first in
+  //    KNOWN_AGENTS — typically codebuddy — making every other agent's
+  //    statusline show codebuddy's data).
+  const dir = (__dirname || '').replace(/\\/g, '/').toLowerCase();
+  for (const id of KNOWN_AGENTS) {
+    if (dir.includes(`/${id}/`) || dir.includes(`.${id}/`) ||
+        dir.includes(`.${id}-cn/`)) {
+      return id;
+    }
+  }
+
+  // 3) Host env hints (CodeBuddy sets these for its CLI session).
   if (process.env.CODEBUDDY_TMUX_SESSION !== undefined ||
       process.env.CODEBUDDY_INSTANCE_META_PURPOSE !== undefined) {
     return 'codebuddy';
   }
 
-  // 3) Whichever agent has a live `active` flag on disk wins.
+  // 4) Whichever agent has a live `active` flag on disk wins. Fallback only —
+  //    suffers from the race described above when more than one is set.
   for (const id of KNOWN_AGENTS) {
     try {
       if (fs.statSync(path.join(cavemanRoot, id, 'active')).isFile()) return id;
     } catch { /* not present */ }
   }
 
-  // 4) Fallback to the historical default.
+  // 5) Fallback to the historical default.
   return 'qwen';
 }
 
