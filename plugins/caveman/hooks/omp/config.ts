@@ -46,7 +46,7 @@ function getCavemanRoot(): string {
 }
 
 /** Per-agent data dir: ~/.caveman/<agent>/ */
-function getAgentDataDir(): string {
+export function getAgentDataDir(): string {
   return path.join(getCavemanRoot(), AGENT_ID);
 }
 
