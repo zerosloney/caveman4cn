@@ -6,15 +6,16 @@
 
 ## 这是什么
 
-本仓库是名为 **`master0071`** 的统一插件市场，同时为五个宿主提供 Caveman 插件：
+本仓库是名为 **`master0071`** 的统一插件市场，同时为六个宿主提供 Caveman 插件：
 
 - **ZCode** 加载本仓库 → 获得 `caveman`
 - **CodeBuddy** 加载本仓库 → 获得 `caveman`
 - **Trae IDE** 运行 `install-trae.js` → 安装 `caveman`
 - **Qwen Code** 运行 `install-qwen.js` → 安装 `caveman`
 - **Qoder** 运行 `install-qoder.js` → 安装 `caveman`
+- **Oh My Pi (omp)** 运行 `install-omp.js` → 安装 `caveman`
 
-五个宿主各按自己的约定发现资产，互不干扰：
+六个宿主各按自己的约定发现资产，互不干扰：
 
 | 宿主 | 发现机制 | 加载的插件 |
 |------|---------|-----------|
@@ -23,8 +24,9 @@
 | Trae IDE | 安装器铺资产到 `~/.trae-cn/`（无市场清单概念） | `caveman` |
 | Qwen Code | 安装器铺扩展到 `~/.qwen/extensions/caveman/` + 合并 `~/.qwen/settings.json` | `caveman` |
 | Qoder | `.qoder-plugin/marketplace.json` + `plugins/caveman/.qoder-plugin/plugin.json`；安装器铺插件到 `~/.qoder/plugins/caveman/` + 合并 `~/.qoder/settings.json` | `caveman` |
+| Oh My Pi | 安装器铺扩展到 `~/.omp/agent/extensions/caveman/` + 技能到 `~/.omp/agent/skills/` | `caveman` |
 
-ZCode 与 CodeBuddy 靠各自清单目录约定区分；Trae 没有 marketplace/plugin.json 概念，由安装器把 skills/commands/hooks/rules 铺到 `~/.trae-cn/` 全局约定位置；Qwen Code 由安装器把扩展铺到 `~/.qwen/extensions/caveman/`，并把钩子与状态行合并进 `~/.qwen/settings.json`；Qoder 由安装器把插件铺到 `~/.qoder/plugins/caveman/`（含 `.qoder-plugin/plugin.json` 清单），并把钩子合并进 `~/.qoder/settings.json`。公共源码只保留一份，平台差异位于 `plugins/caveman/hooks/<platform>/`。
+ZCode 与 CodeBuddy 靠各自清单目录约定区分；Trae 没有 marketplace/plugin.json 概念，由安装器把 skills/commands/hooks/rules 铺到 `~/.trae-cn/` 全局约定位置；Qwen Code 由安装器把扩展铺到 `~/.qwen/extensions/caveman/`，并把钩子与状态行合并进 `~/.qwen/settings.json`；Qoder 由安装器把插件铺到 `~/.qoder/plugins/caveman/`（含 `.qoder-plugin/plugin.json` 清单），并把钩子合并进 `~/.qoder/settings.json`；Oh My Pi 由安装器把扩展文件（`index.ts`/`config.ts`/`stats.ts`/`package.json`）铺到 `~/.omp/agent/extensions/caveman/`，技能铺到 `~/.omp/agent/skills/`，omp 自动发现扩展并加载技能。公共源码只保留一份，平台差异位于 `plugins/caveman/hooks/<platform>/`。
 
 ## 目录结构
 
@@ -45,14 +47,16 @@ caveman4cn/
 │           ├── codebuddy/
 │           ├── trae/
 │           ├── qwen/
-│           └── qoder/
+│           ├── qoder/
+│           └── omp/
 ├── skills/                              # 共享技能源（真理之源）
 ├── scripts/
 │   ├── install-zcode.js                 # 安装到 ZCode
 │   ├── install-codebuddy.js             # 安装到 CodeBuddy
 │   ├── install-trae.js                  # 安装到 Trae（铺到 ~/.trae-cn/）
 │   ├── install-qwen.js                  # 安装到 Qwen Code（铺到 ~/.qwen/extensions/）
-│   └── install-qoder.js                 # 安装到 Qoder（铺到 ~/.qoder/plugins/）
+│   ├── install-qoder.js                 # 安装到 Qoder（铺到 ~/.qoder/plugins/）
+│   └── install-omp.js                   # 安装到 Oh My Pi（铺到 ~/.omp/agent/extensions/）
 └── package.json                         # @master0071/caveman4cn
 ```
 
@@ -145,6 +149,26 @@ qodercli plugins install caveman
 
 安装后重启 Qoder。
 
+### Oh My Pi (omp)
+
+```bash
+node scripts/install-omp.js             # 安装
+node scripts/install-omp.js --dry-run   # 预览
+node scripts/install-omp.js --uninstall # 卸载
+```
+
+Oh My Pi 的扩展约定：安装器把扩展文件（TypeScript 源码）铺到 `~/.omp/agent/extensions/caveman/`，技能铺到 `~/.omp/agent/skills/`，omp 自动发现扩展并加载技能：
+
+- 扩展文件 → `~/.omp/agent/extensions/caveman/{index.ts,config.ts,stats.ts,package.json}`
+- 技能 → `~/.omp/agent/skills/<skill-name>/`（每个技能一个目录，含 `SKILL.md`）
+- 数据目录 → `~/.caveman/omp/`（存放 token 统计等运行时数据）
+
+安装器尊重 `PI_CODING_AGENT_DIR` 环境变量——设置后铺到 `${PI_CODING_AGENT_DIR}/extensions/caveman/` 而非默认的 `~/.omp/agent/`。
+
+Oh My Pi 没有 session 钩子机制——扩展通过 `index.ts` 在 agent 初始化时加载配置与技能，自动激活 caveman 模式。安装后重启 omp 或启动新会话即可生效。
+
+> **注意**：omp 不需要单独的安装器注册步骤——扩展文件到达 `extensions/` 目录后，omp 下次启动时自动发现。无需修改任何 settings.json。
+
 ### 一键全部安装（通过 npm）
 
 ```bash
@@ -157,7 +181,7 @@ npx @master0071/caveman4cn
 npm run install:qwen
 ```
 
-也可直接运行 `npm run install:zcode`、`install:codebuddy`、`install:trae` 或 `install:qoder`。
+也可直接运行 `npm run install:zcode`、`install:codebuddy`、`install:trae`、`install:qoder` 或 `install:omp`。
 
 ## 使用
 
@@ -277,10 +301,10 @@ Qwen Code 用户运行 `install-qwen.js` 时已自动写入 `ui.statusLine`（�
 
 ## 工作原理
 
-1. 安装器从唯一的 `plugins/caveman/` 源目录复制公共资产，并只组装当前宿主的 `hooks/<platform>/`；Trae、Qwen Code、Qoder 再按各自约定铺放或合并配置
+1. 安装器从唯一的 `plugins/caveman/` 源目录复制公共资产，并只组装当前宿主的 `hooks/<platform>/`；Trae、Qwen Code、Qoder、Oh My Pi 再按各自约定铺放或合并配置
 2. 技能文件（`skills/*/SKILL.md`）告诉宿主：丢弃废话，保留实质
-3. ZCode/CodeBuddy 的插件系统注册钩子、命令和技能；Trae 的 skills/commands/rules 落到 `~/.trae-cn/` 全局目录自动加载，hooks 通过合并 `~/.trae-cn/hooks.json` 注册；Qwen Code 的 skills/commands/agents 落到扩展目录自动发现，hooks 与 statusLine 通过合并 `~/.qwen/settings.json` 注册；Qoder 的 skills/commands/agents 落到插件目录自动发现，hooks 通过合并 `~/.qoder/settings.json` 注册（也支持插件级 `hooks/hooks.json`，需 qodercli 登记）
-4. ZCode/CodeBuddy 只读取与自己约定相符的 manifest；Trae、Qwen Code 与 Qoder 不同程度依赖安装器和约定路径发现
+3. ZCode/CodeBuddy 的插件系统注册钩子、命令和技能；Trae 的 skills/commands/rules 落到 `~/.trae-cn/` 全局目录自动加载，hooks 通过合并 `~/.trae-cn/hooks.json` 注册；Qwen Code 的 skills/commands/agents 落到扩展目录自动发现，hooks 与 statusLine 通过合并 `~/.qwen/settings.json` 注册；Qoder 的 skills/commands/agents 落到插件目录自动发现，hooks 通过合并 `~/.qoder/settings.json` 注册（也支持插件级 `hooks/hooks.json`，需 qodercli 登记）；Oh My Pi 的扩展文件（`index.ts`/`config.ts`/`stats.ts`）落到 `extensions/caveman/` 目录，skills 落到 `skills/` 目录，omp 在 agent 初始化时自动发现并加载
+4. ZCode/CodeBuddy 只读取与自己约定相符的 manifest；Trae、Qwen Code 与 Qoder 不同程度依赖安装器和约定路径发现；Oh My Pi 无需 manifest——扩展目录存在即发现
 
 ## 许可证
 
