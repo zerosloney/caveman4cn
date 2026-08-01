@@ -1,7 +1,7 @@
 #!/usr/bin/env node
-// statusline.js — Caveman mode status line for Qwen Code.
+// statusline.js — Caveman mode status line (host-agnostic: CodeBuddy / Qwen / ...).
 //
-// Qwen Code contract (statusLine API under ui.statusLine in settings.json):
+// Host contract (statusLine command in settings.json):
 //   - stdin: JSON with { cwd, workspace.current_dir, model.display_name,
 //     session_id, context_window, metrics, cost, ... }
 //   - stdout: first line(s) become the status line text. ANSI colors supported
@@ -12,19 +12,21 @@
 //     wraps the command in `node "..."` so this works cross-platform.
 //
 // Data sources:
-//   - Current caveman mode via ~/.caveman/qwen/active
-//   - Lifetime token savings via ~/.caveman/qwen/lifetime-saved.json
-//   - Session snapshot via ~/.caveman/qwen/session-snapshot.json (written by Stop hook)
+//   - Current caveman mode via ~/.caveman/<agent>/active
+//   - Lifetime token savings via ~/.caveman/<agent>/lifetime-saved.json
+//   - Session snapshot via ~/.caveman/<agent>/session-snapshot.json (written by Stop hook)
 //   - User display preferences via ~/.caveman/config.json (statusline section)
 //   - Git branch via `git -C <cwd> branch --show-current`
 //   - Working directory basename from stdin's cwd field
 //   - Cost from stdin's cost.total_cost_usd (object, defensive, may be absent)
 //   - Context window from stdin's context_window/metrics (defensive, may be absent)
 //
-// Agent-isolated: data stored under ~/.caveman/qwen/ so multiple agents running
-// on the same machine never share or clobber each other's stats.
+// Agent-isolated: each host (codebuddy/qwen/qoder/trae/zcode) writes its state
+// under ~/.caveman/<agent>/ so multiple agents on the same machine never clobber
+// each other. This shared script discovers the live agent at runtime instead of
+// assuming one (the old hardcoded 'qwen' made CodeBuddy's state invisible).
 // Tolerates missing files, non-git directories, and malformed stdin.
-// Any error → output empty string (Qwen Code displays nothing, not broken).
+// Any error → output empty string (host displays nothing, not broken).
 
 const path = require('path');
 const fs = require('fs');
@@ -32,13 +34,40 @@ const { execFileSync } = require('child_process');
 
 const MAX_INPUT_BYTES = 1024 * 1024;
 
-// ── Agent identity (hardcoded per build) ─────────────────────────────────────
-const AGENT_ID = 'qwen';
-
-// ── Paths ───────────────────────────────────────────────────────────────────
+// ── Agent identity (discovered at runtime) ──────────────────────────────────
+// The caveman plugin ships per-agent hook dirs (codebuddy/qwen/qoder/trae/zcode)
+// that each write state under ~/.caveman/<agent>/. This shared statusline script
+// must find which agent is live rather than assuming one.
+const KNOWN_AGENTS = ['codebuddy', 'qwen', 'qoder', 'trae', 'zcode'];
 
 const homeDir = process.env.HOME || process.env.USERPROFILE || '.';
 const cavemanRoot = path.join(homeDir, '.caveman');
+
+function detectAgentId() {
+  // 1) Explicit override — handy for testing or custom hosts.
+  if (process.env.CAVEMAN_AGENT) return process.env.CAVEMAN_AGENT;
+
+  // 2) Host env hints (CodeBuddy sets these for its CLI session).
+  if (process.env.CODEBUDDY_TMUX_SESSION !== undefined ||
+      process.env.CODEBUDDY_INSTANCE_META_PURPOSE !== undefined) {
+    return 'codebuddy';
+  }
+
+  // 3) Whichever agent has a live `active` flag on disk wins.
+  for (const id of KNOWN_AGENTS) {
+    try {
+      if (fs.statSync(path.join(cavemanRoot, id, 'active')).isFile()) return id;
+    } catch { /* not present */ }
+  }
+
+  // 4) Fallback to the historical default.
+  return 'qwen';
+}
+
+const AGENT_ID = detectAgentId();
+
+// ── Paths ───────────────────────────────────────────────────────────────────
+
 const agentDir = path.join(cavemanRoot, AGENT_ID);
 const flagPath = path.join(agentDir, 'active');
 const lifetimeFile = path.join(agentDir, 'lifetime-saved.json');
