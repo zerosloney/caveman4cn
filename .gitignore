@@ -21,6 +21,10 @@ context/refs/research-brief-caveman-code-efficiency.md
 .claude/worktrees/
 .plugins-cache.json
 
+# Cline install targets (source of truth: cline/rules/ and skills/)
+.clinerules/
+.cline/
+
 # Build artifacts
 dist/*
 !dist/caveman.skill

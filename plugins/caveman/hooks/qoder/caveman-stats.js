@@ -46,10 +46,10 @@ const DATA_DIR = getAgentDataDir();
 const LIFETIME_FILE = getAgentLifetimeFile();
 const SNAPSHOT_FILE = getAgentSnapshotFile();
 
-// Assumed verbose-to-caveman output ratio, back-derived from the README's "~65%"
-// claim. There is no control run behind it: nothing here measures what the same
+// Assumed verbose-to-caveman output ratio, calibrated for ~30% output savings.
+// There is no control run behind it: nothing here measures what the same
 // prompts would have cost without caveman. Used only for the "Est. saved" line.
-const BASELINE_OUTPUT_MULTIPLIER = 2.86;
+const BASELINE_OUTPUT_MULTIPLIER = 1.43;
 
 /**
  * Enumerate all transcript files across every candidate root that exists.
@@ -304,9 +304,8 @@ function fmt(n) {
 
 /**
  * Human-readable block. Turns/input/output are real receipts from the log.
- * "Est. saved" is a guess, and the trailing note says so — the old output
- * claimed a "~65%" savings rate that was algebraically fixed and identical on
- * every session.
+ * "Est. saved" is a guess, and the trailing note says so — now ~30% output
+ * savings.
  */
 function formatStats(stats) {
   if (!stats.found) {

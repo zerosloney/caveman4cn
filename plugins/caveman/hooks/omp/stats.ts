@@ -34,8 +34,8 @@ function getSessionsRoot(): string {
 
 // ── Baseline ratio ───────────────────────────────────────────────────────────
 // Assumed verbose-to-caveman output ratio. Used only for the "Est. saved" line.
-// No control run behind it — the number is a rough heuristic.
-const BASELINE_OUTPUT_MULTIPLIER = 2.86;
+// No control run behind it — the number is a rough heuristic. ~30% savings.
+const BASELINE_OUTPUT_MULTIPLIER = 1.43;
 
 // ── Types ────────────────────────────────────────────────────────────────────
 

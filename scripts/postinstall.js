@@ -29,6 +29,7 @@ const HOSTS = [
   { name: 'trae', probe: path.join(home, '.trae-cn'), installer: 'install-trae.js' },
   { name: 'qwen', probe: path.join(home, '.qwen'), installer: 'install-qwen.js' },
   { name: 'qoder', probe: path.join(home, '.qoder'), installer: 'install-qoder.js' },
+  { name: 'cline', probe: path.join(home, '.cline'), installer: 'install-cline.js' },
 ];
 
 function main() {
