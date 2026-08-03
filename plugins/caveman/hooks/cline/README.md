@@ -4,11 +4,12 @@ Cline SDK Plugin implementing full caveman mode with lifecycle hooks.
 
 ## Features
 
-- **Session Start**: Auto-activate caveman mode, inject compression rules
+- **Mode Activation**: Auto-activate caveman mode on run start
 - **Mode Tracking**: Parse `/caveman` commands and natural language activation
-- **Dangerous Operation Blocking**: Intercept `rm -rf /`, system file writes, etc.
-- **Token Statistics**: Track usage via SDK hooks, persist session/lifetime stats
-- **Output Quality Check**: Block verbose output, request compression (max 3 blocks)
+- **Always-on Rules**: Register compression rules into the system prompt (via the `rules` capability)
+- **Dangerous Operation Blocking**: Intercept `rm -rf /`, system file writes, etc. (skip the tool call)
+- **Token Statistics**: Record per-run token usage via SDK hooks, persist session/lifetime stats
+- **Output Quality Check**: Warn on verbose output (log-only; the SDK cannot re-block a finished run)
 
 ## Installation
 
@@ -32,14 +33,20 @@ node scripts/install-cline.js             # Install rules + skills only (Phase 1
 
 ## Hook Stages
 
+The plugin implements the `@cline/sdk` `AgentRuntimeHooks` hook bag:
+
 | Stage | Function |
 |-------|----------|
-| `sessionStart` | Activate caveman mode, inject SKILL.md rules |
-| `beforeAgentStart` | Parse commands, track mode, reinforce rules |
-| `toolCallBefore` | Block dangerous operations (rm -rf, system writes) |
-| `toolCallAfter` | Record token usage from SDK events |
-| `runEnd` | Check output verbosity, persist stats |
-| `sessionShutdown` | Persist lifetime stats, reset session |
+| `setup` | Register `caveman_stats` tool + always-on rule |
+| `beforeRun` | Reset per-run session stats, activate default mode |
+| `beforeModel` | Parse `/caveman` commands, track mode, inject stats |
+| `beforeTool` | Block dangerous operations (rm -rf, system writes) |
+| `afterRun` | Record token usage, persist stats, output quality check |
+
+> The SDK has no `sessionStart`/`sessionShutdown`/`runEnd` hooks — session scope
+> maps to a single `run()`/`continue()` boundary, and the output-quality check is
+> log-only (the SDK's `stop` control aborts the whole run, which is not the
+> desired "please compress" behavior).
 
 ## Data Directory
 

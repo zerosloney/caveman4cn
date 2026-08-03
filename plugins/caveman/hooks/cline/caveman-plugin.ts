@@ -1,15 +1,25 @@
 // caveman-plugin.ts — Cline SDK Plugin for caveman mode
 //
-// Implements lifecycle hooks for caveman mode:
-// - session_start: Activate caveman mode, inject rules
-// - before_agent_start: Mode tracking, command parsing, per-turn reinforcement
-// - tool_call_before: Block dangerous operations
-// - tool_call_after: Track token usage
-// - run_end: Output quality check, persist stats
+// Implements lifecycle hooks for caveman mode via the @cline/sdk AgentPlugin
+// (AgentExtension) contract. The runtime hook bag is `AgentRuntimeHooks`:
+//   beforeRun / afterRun / beforeModel / afterModel / beforeTool / afterTool / onEvent
+//
+// Mapping to the original feature set:
+// - setup:                      register caveman_stats tool + always-on rules
+// - beforeRun:                  activate default mode, reset per-run session stats
+// - beforeModel:                /caveman command parsing, mode tracking, stats injection
+// - beforeTool:                 block dangerous operations (skip)
+// - afterRun:                   record token usage, persist stats, output quality check
+//
+// NOTE: the SDK has no sessionStart/sessionShutdown/runEnd hooks. Session scope
+// maps to a single run()/continue() boundary, and the output-quality check is
+// log-only (the SDK's `stop` control aborts the whole run, which is not the
+// desired "please compress" behavior).
 
 import type { AgentPlugin } from '@cline/sdk';
 import * as fs from 'fs';
 import * as path from 'path';
+import { fileURLToPath } from 'url';
 import {
   VALID_MODES,
   getDefaultMode,
@@ -17,7 +27,6 @@ import {
   getCurrentMode,
   activateMode,
   deactivateMode,
-  getAgentFlagPath,
   getAgentPrevFlagPath,
   readFlag,
   safeWriteFlag,
@@ -139,20 +148,40 @@ function parseNlActivation(prompt: string): string | null {
 
 let blockCount = 0;
 
+// ESM-safe skill resolution: the plugin is loaded as a `.ts` module with
+// `"type": "module"` (no `__dirname`). Resolve relative to this file's URL,
+// falling back to cwd-based candidates (bundled-skills layout) on failure.
 function resolveSkillContent(): string {
-  const candidates = [
-    path.join(__dirname, '..', '..', 'skills', 'caveman', 'SKILL.md'),
-    path.join(__dirname, '..', '..', '..', 'skills', 'caveman', 'SKILL.md'),
-  ];
-  for (const c of candidates) {
-    try { return fs.readFileSync(c, 'utf-8'); } catch { /* try next */ }
-  }
+  try {
+    const here = path.dirname(fileURLToPath(import.meta.url));
+    const candidates = [
+      path.join(here, '..', '..', 'skills', 'caveman', 'SKILL.md'),
+      path.join(here, '..', '..', '..', 'skills', 'caveman', 'SKILL.md'),
+      path.join(process.cwd(), 'skills', 'caveman', 'SKILL.md'),
+    ];
+    for (const c of candidates) {
+      try { return fs.readFileSync(c, 'utf-8'); } catch { /* try next */ }
+    }
+  } catch { /* import.meta unavailable */ }
   return '';
 }
 
 const FALLBACK_RULES =
   'Caveman mode active. Respond terse like smart caveman — drop articles, ' +
   'filler, pleasantries. Fragments OK. Technical terms exact. Code unchanged.';
+
+// `/caveman-stats ...` is intercepted here and the formatted stats are injected
+// into the model request as an extra user message (the SDK has no
+// `additionalContext` return for beforeModel).
+const STATS_COMMAND_RE = /^\/caveman-stats(\s|$)/i;
+
+function statsRequested(prompt: string): boolean {
+  return STATS_COMMAND_RE.test(prompt.trim());
+}
+
+function statsLifetimeRequested(prompt: string): boolean {
+  return /\s--(lifetime|all|since)\b/i.test(prompt) || /\s--all\b/.test(prompt);
+}
 
 // ── Plugin Definition ────────────────────────────────────────────────────
 
@@ -162,7 +191,7 @@ export const cavemanPlugin: AgentPlugin = {
     capabilities: ['tools', 'hooks', 'rules'],
   },
 
-  setup(api, ctx) {
+  setup(api) {
     api.registerTool({
       name: 'caveman_stats',
       description: 'Show real token usage and estimated savings for the current session or lifetime.',
@@ -176,37 +205,64 @@ export const cavemanPlugin: AgentPlugin = {
         },
       },
       execute: async (input) => {
-        const lifetime = input?.lifetime || false;
+        const lifetime = Boolean((input as { lifetime?: boolean } | undefined)?.lifetime);
         const stats = computeStats(lifetime);
         writeLifetimeBadge();
         return { content: formatStats(stats) };
       },
     });
+
+    // Always-on compression rules via the `rules` capability (placed into the
+    // runtime system prompt once, instead of per-turn message injection).
+    const rules = resolveSkillContent() || FALLBACK_RULES;
+    api.registerRule({ id: 'caveman-mode', content: rules });
   },
 
   hooks: {
-    sessionStart(context) {
+    beforeRun() {
+      // A run()/continue() boundary is the closest analogue to "session start"
+      // in the SDK hook bag. Reset per-run stats and (re)activate the default.
+      resetSession();
       const mode = getDefaultMode();
-      const skillContent = resolveSkillContent();
       if (mode !== 'off') {
         activateMode(mode);
-        const additionalContext = skillContent
-          ? `Caveman mode active (${mode}). Rules:\n${skillContent}`
-          : `Caveman mode active (${mode}). ${FALLBACK_RULES}`;
-        return { additionalContext };
       }
       return {};
     },
 
-    beforeAgentStart(context) {
-      const prompt = context.prompt || '';
+    beforeModel(context) {
+      const request = context.request;
+      const messages = request.messages;
+      // The user's latest prompt is the tail user message of the model request.
+      let prompt = '';
+      for (let i = messages.length - 1; i >= 0; i--) {
+        const msg = messages[i];
+        if (msg.role === 'user') {
+          prompt = msg.content
+            .filter((part) => part.type === 'text')
+            .map((part) => part.text)
+            .join(' ')
+            .trim();
+          break;
+        }
+      }
       const lowerPrompt = prompt.toLowerCase().replace(/\s+/g, ' ');
 
-      if (/^\/caveman-stats(\s|$)/i.test(prompt.trim())) {
-        const lifetime = /\s--(lifetime|all|since)\b/i.test(prompt) || /\s--all\b/.test(prompt);
+      if (statsRequested(prompt)) {
+        const lifetime = statsLifetimeRequested(prompt);
         const stats = computeStats(lifetime);
         writeLifetimeBadge();
-        return { additionalContext: formatStats(stats) };
+        return {
+          messages: [
+            ...messages,
+            {
+              id: `caveman-stats-${Date.now()}`,
+              role: 'user' as const,
+              content: [{ type: 'text' as const, text: formatStats(stats) }],
+              createdAt: Date.now(),
+            },
+          ],
+        };
       }
 
       let currentMode = getCurrentMode() || getDefaultMode();
@@ -258,62 +314,57 @@ export const cavemanPlugin: AgentPlugin = {
         }
       }
 
-      let additionalContext = '';
-      if (currentMode && !INDEPENDENT_MODES.has(currentMode)) {
-        additionalContext =
-          `CAVEMAN MODE ACTIVE (${currentMode}). ` +
-          `Drop articles/filler/pleasantries/hedging. Fragments OK. ` +
-          `Code/commits/security: write normal.`;
-      }
-
-      return { additionalContext };
+      // Rules are always-on via registerRule (system prompt); no per-turn
+      // reinforcement message is needed here.
+      return {};
     },
 
-    toolCallBefore(context) {
+    beforeTool(context) {
       if (!isCavemanActive()) return {};
-      const toolName = context.toolCall?.name || '';
-      const toolInput = context.toolCall?.input || {};
+      // AgentToolCallPart carries the tool name in `toolName`, and the parsed
+      // tool input is exposed both on `input` and `toolCall.input`.
+      const toolName = context.toolCall?.toolName || context.tool?.name || '';
+      const toolInput =
+        context.input !== undefined ? context.input : context.toolCall?.input;
       const dangerReason = checkDangerous(toolName, toolInput);
       if (dangerReason) {
-        return { decision: 'deny', reason: dangerReason };
+        // `skip` blocks only this call (unlike `stop`, which aborts the run).
+        return { skip: true, reason: dangerReason };
       }
       return {};
     },
 
-    toolCallAfter(context) {
-      if (context.usage) {
+    afterRun(context) {
+      // Record the run's token usage once (usage-updated events can fire many
+      // times per model call, which would inflate the turn count).
+      const usage = context.result?.usage;
+      if (usage) {
         recordUsage({
-          inputTokens: context.usage.inputTokens || 0,
-          outputTokens: context.usage.outputTokens || 0,
-          cacheReadTokens: context.usage.cacheReadTokens,
-          cacheWriteTokens: context.usage.cacheWriteTokens,
-          cost: context.usage.cost,
+          inputTokens: usage.inputTokens || 0,
+          outputTokens: usage.outputTokens || 0,
+          cacheReadTokens: usage.cacheReadTokens,
+          cacheWriteTokens: usage.cacheWriteTokens,
+          cost: usage.totalCost,
         });
       }
-      return {};
-    },
-
-    runEnd(context) {
       writeSessionSnapshot();
       writeLifetimeBadge();
+
       if (!isCavemanActive()) return {};
-      const lastMessage = context.result?.text || '';
+      const lastMessage = context.result?.outputText || '';
       const issue = checkVerbosity(lastMessage);
       if (issue) {
         blockCount++;
-        if (blockCount >= 3) {
-          blockCount = 0;
-          return {};
-        }
-        return { decision: 'block', reason: issue };
+        // The SDK cannot re-block a finished run; surface the hint only.
+        if (blockCount < 3) console.warn(`[caveman] ${issue}`);
+        return {};
       }
       blockCount = 0;
       return {};
     },
 
-    sessionShutdown(context) {
-      writeLifetimeBadge();
-      resetSession();
+    // Token usage is recorded once per run in afterRun; no per-call work needed.
+    afterTool() {
       return {};
     },
   },
