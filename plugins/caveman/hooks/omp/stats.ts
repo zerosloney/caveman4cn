@@ -12,6 +12,7 @@
 //
 // Designed for zero npm deps and tolerance of missing/partial logs.
 
+import * as crypto from 'node:crypto';
 import * as fs from 'node:fs';
 import * as path from 'node:path';
 import { getAgentDataDir, getAgentLifetimeFile, getAgentSnapshotFile } from './config';
@@ -61,8 +62,55 @@ interface UsageRecord {
 
 // ── Session discovery ────────────────────────────────────────────────────────
 
-/** List all .jsonl session files under the sessions root. */
-function listSessionFiles(): string[] {
+/**
+ * Find the session directory for a given project CWD.
+ * OMP names session dirs: `abs-<lastComponent>-<sha256(fullPath)>`.
+ * Falls back to iterating all dirs if the exact name lookup fails.
+ */
+function findProjectSessionDir(cwd: string): string | null {
+  const root = getSessionsRoot();
+  try {
+    if (!fs.statSync(root).isDirectory()) return null;
+  } catch {
+    return null;
+  }
+  const normalized = cwd.replace(/\\/g, '/');
+  const hash = crypto.createHash('sha256').update(normalized).digest('hex');
+  const lastComponent = normalized.split('/').filter(Boolean).pop() || '';
+  const dirName = `abs-${lastComponent}-${hash}`;
+  const dirPath = path.join(root, dirName);
+  try {
+    if (fs.statSync(dirPath).isDirectory()) return dirPath;
+  } catch {
+    // exact name not found, fall through to iteration
+  }
+  // Fallback: iterate all dirs to find a match
+  try {
+    for (const dirEntry of fs.readdirSync(root, { withFileTypes: true })) {
+      if (!dirEntry.isDirectory()) continue;
+      if (dirEntry.name === dirName) return path.join(root, dirName);
+    }
+  } catch {
+    // skip unreadable root
+  }
+  return null;
+}
+
+/** List .jsonl session files, optionally scoped to a project directory. */
+function listSessionFiles(projectDir?: string | null): string[] {
+  if (projectDir) {
+    const files: string[] = [];
+    try {
+      for (const file of fs.readdirSync(projectDir)) {
+        if (file.endsWith('.jsonl')) {
+          files.push(path.join(projectDir, file));
+        }
+      }
+    } catch {
+      // skip unreadable directory
+    }
+    return files;
+  }
   const root = getSessionsRoot();
   try {
     if (!fs.statSync(root).isDirectory()) return [];
@@ -90,9 +138,13 @@ function listSessionFiles(): string[] {
   return files;
 }
 
-/** Find the most recently modified session file. */
-function findCurrentSessionFile(): string | null {
-  const files = listSessionFiles();
+/** Find the most recently modified session file, scoped to the given project. */
+function findCurrentSessionFile(cwd?: string): string | null {
+  let projectDir: string | null = null;
+  if (cwd) {
+    projectDir = findProjectSessionDir(cwd);
+  }
+  const files = listSessionFiles(projectDir);
   if (files.length === 0) return null;
   files.sort((a, b) => {
     try {
@@ -164,6 +216,8 @@ export interface ComputeStatsOptions {
   transcript?: string;
   /** Union all transcripts across all sessions (default: false). */
   lifetime?: boolean;
+  /** Project CWD to scope the session search (default: none = all projects). */
+  cwd?: string;
 }
 
 /**
@@ -179,7 +233,7 @@ export function computeStats(opts: ComputeStatsOptions = {}): CavemanStats {
   } else if (opts.lifetime) {
     files = listSessionFiles();
   } else {
-    const current = findCurrentSessionFile();
+    const current = findCurrentSessionFile(opts.cwd);
     files = current ? [current] : [];
   }
 

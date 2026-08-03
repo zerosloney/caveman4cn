@@ -166,7 +166,7 @@ function updateStatusLine(ctx: ExtensionContext): void {
   const mode = getActiveMode() || 'off';
   const label = MODE_LABELS[mode] || mode;
   const lifetime = readLifetimeBadge();
-  const session = computeStats({ lifetime: false });
+  const session = computeStats({ lifetime: false, cwd: ctx.cwd });
 
   const parts = [`⛏ ${label}`];
   // 当前会话节省
@@ -255,7 +255,7 @@ export default function cavemanExtension(pi: ExtensionAPI): void {
         case 'caveman-stats': {
           const args = cmd.args;
           const lifetime = /\b--lifetime\b/i.test(args) || /\b-l\b/i.test(args);
-          const stats = computeStats({ lifetime });
+          const stats = computeStats({ lifetime, cwd: ctx?.cwd });
           pi.sendMessage(formatStats(stats), { deliverAs: 'steer' });
           break;
         }
@@ -302,7 +302,7 @@ export default function cavemanExtension(pi: ExtensionAPI): void {
           const mode = getActiveMode() || 'off';
           const label = MODE_LABELS[mode] || mode;
           const lifetime = readLifetimeBadge();
-          const session = computeStats({ lifetime: false });
+          const session = computeStats({ lifetime: false, cwd: ctx.cwd });
           let msg = `Caveman status: ${label} [${mode}] | lifetime: ${fmtShort(lifetime)} tokens`;
           if (session.found) {
             msg += ` | session: ${fmtShort(session.saved)} saved / ${fmtShort(session.input + session.output)} total`;
@@ -443,7 +443,7 @@ export default function cavemanExtension(pi: ExtensionAPI): void {
     argumentHint: '[--lifetime]',
     handler: async (args: string, _ctx: ExtensionCommandContext) => {
       const lifetime = /\b--lifetime\b/i.test(args) || /\b-l\b/i.test(args);
-      const stats = computeStats({ lifetime });
+      const stats = computeStats({ lifetime, cwd: ctx?.cwd });
       pi.sendMessage(formatStats(stats), { deliverAs: 'steer' });
     },
   });
@@ -502,7 +502,7 @@ export default function cavemanExtension(pi: ExtensionAPI): void {
       const mode = getActiveMode() || 'off';
       const label = MODE_LABELS[mode] || mode;
       const lifetime = readLifetimeBadge();
-      const session = computeStats({ lifetime: false });
+      const session = computeStats({ lifetime: false, cwd: ctx.cwd });
       let msg = `Caveman status: ${label} [${mode}] | lifetime: ${fmtShort(lifetime)} tokens`;
       if (session.found) {
         msg += ` | session: ${fmtShort(session.saved)} saved / ${fmtShort(session.input + session.output)} total`;
