@@ -45,8 +45,8 @@ const MODE_LABELS: Record<string, string> = {
 
 // ── Refresh timer ─────────────────────────────────────────────────────────────
 
-let refreshTimer: NodeJS.Timeout | null = null;
-let statusCtx: { ui: { setStatus: (key: string, text: string) => void } } | null = null;
+let refreshTimer: unknown = null;
+let statusCtx: ExtensionContext | null = null;
 
 // ── Minimal inline types ─────────────────────────────────────────────────────
 // These mirror the relevant subset of @oh-my-pi/pi-coding-agent's ExtensionAPI
@@ -58,6 +58,12 @@ interface ExtensionContext {
     setStatus(key: string, text: string): void;
   };
   cwd: string;
+  /** Managed timer — cancellable via clearTimer(). */
+  setInterval(handler: () => void, ms: number): unknown;
+  /** Managed timer — cancellable via clearTimer(). */
+  setTimeout(handler: () => void, ms: number): unknown;
+  /** Cancel a managed timer created by setInterval/setTimeout. */
+  clearTimer(id: unknown): void;
 }
 
 interface ExtensionCommandContext extends ExtensionContext {
@@ -156,7 +162,7 @@ function parseCavemanModeArg(args: string): string | null {
 
 // ── Status line update ───────────────────────────────────────────────────────
 
-function updateStatusLine(ctx: { ui: { setStatus: (key: string, text: string) => void } }): void {
+function updateStatusLine(ctx: ExtensionContext): void {
   const mode = getActiveMode() || 'off';
   const label = MODE_LABELS[mode] || mode;
   const lifetime = readLifetimeBadge();
@@ -173,19 +179,19 @@ function updateStatusLine(ctx: { ui: { setStatus: (key: string, text: string) =>
   ctx.ui.setStatus('caveman', parts.join(' '));
 }
 
-function startRefreshTimer(ctx: { ui: { setStatus: (key: string, text: string) => void } }): void {
+function startRefreshTimer(ctx: ExtensionContext): void {
   stopRefreshTimer();
   statusCtx = ctx;
-  refreshTimer = setInterval(() => {
-    if (statusCtx) {
-      updateStatusLine(statusCtx);
-    }
-  }, 30_000);
+  refreshTimer = ctx.setInterval(() => {
+    updateStatusLine(ctx);
+  }, 5_000);
 }
 
 function stopRefreshTimer(): void {
   if (refreshTimer !== null) {
-    clearInterval(refreshTimer);
+    if (statusCtx) {
+      statusCtx.clearTimer(refreshTimer);
+    }
     refreshTimer = null;
   }
   statusCtx = null;
@@ -222,11 +228,13 @@ export default function cavemanExtension(pi: ExtensionAPI): void {
     startRefreshTimer(ctx);
   });
 
-  // ─── User input ───────────────────────────────────────────────────────────
-  pi.on('input', async (event: unknown) => {
+// ─── User input ───────────────────────────────────────────────────────────
+  pi.on('input', async (event: unknown, inputCtx?: ExtensionContext) => {
     const ev = event as { message?: { content?: Array<{ text?: string }> } };
     if (!ev.message?.content?.[0]?.text) return;
     const text = ev.message.content[0].text;
+
+    const ctx = inputCtx || statusCtx;
 
     const cmd = parseSlashCommand(text);
     if (cmd) {
@@ -234,6 +242,7 @@ export default function cavemanExtension(pi: ExtensionAPI): void {
         case 'caveman': {
           const mode = parseCavemanModeArg(cmd.args) || 'full';
           setActiveMode(mode);
+          if (ctx) updateStatusLine(ctx);
           const instruction = getCavemanInstruction(mode);
           if (instruction) {
             pi.sendMessage(
@@ -252,6 +261,7 @@ export default function cavemanExtension(pi: ExtensionAPI): void {
         }
         case 'caveman-commit': {
           setActiveMode('commit');
+          if (ctx) updateStatusLine(ctx);
           pi.sendMessage(
             'Caveman commit mode active. Generate conventional commit message (≤50 char subject, body only for non-obvious why).',
             { deliverAs: 'steer' },
@@ -260,6 +270,7 @@ export default function cavemanExtension(pi: ExtensionAPI): void {
         }
         case 'caveman-review': {
           setActiveMode('review');
+          if (ctx) updateStatusLine(ctx);
           pi.sendMessage(
             'Caveman review mode active. One-line review comments: L<line>: <emoji> <severity>: <problem>. <fix>.',
             { deliverAs: 'steer' },
@@ -274,6 +285,7 @@ export default function cavemanExtension(pi: ExtensionAPI): void {
             break;
           }
           setActiveMode('compress');
+          if (ctx) updateStatusLine(ctx);
           pi.sendMessage(
             `Caveman compress mode active. Compress ${cmd.args} to caveman format. Preserve all code blocks, URLs, paths verbatim. Backup original as ${cmd.args}.original.md.`,
             { deliverAs: 'steer' },
@@ -305,12 +317,14 @@ export default function cavemanExtension(pi: ExtensionAPI): void {
       if (nlMode) {
         if (nlMode === 'off') {
           clearActiveMode();
+          if (ctx) updateStatusLine(ctx);
           pi.sendMessage(
             '[System: Caveman mode deactivated. Return to normal communication style.]',
             { deliverAs: 'steer' },
           );
         } else {
           setActiveMode(nlMode);
+          if (ctx) updateStatusLine(ctx);
           const instruction = getCavemanInstruction(nlMode);
           if (instruction) {
             pi.sendMessage(
@@ -326,12 +340,16 @@ export default function cavemanExtension(pi: ExtensionAPI): void {
   // ─── Context injection ────────────────────────────────────────────────────
   // Injects caveman rules into the LLM context on every turn so the model
   // never forgets the compression style even after compaction.
-  pi.on('context', async (_event: unknown) => {
+  pi.on('context', async (_event: unknown, contextCtx?: ExtensionContext) => {
+    const ctx = contextCtx || statusCtx;
     const mode = getActiveMode();
     if (!mode || mode === 'off' || INDEPENDENT_MODES.has(mode)) return;
 
     const instruction = getCavemanInstruction(mode);
     if (!instruction) return;
+
+    // Refresh status line on each context turn
+    if (ctx) updateStatusLine(ctx);
 
     // Return a custom_message that keeps the instruction near the current turn
     pi.appendEntry('caveman_context', {
@@ -379,10 +397,12 @@ export default function cavemanExtension(pi: ExtensionAPI): void {
   // Accumulates token counts from model responses for stats. Actual computation
   // happens in stats.ts by reading the session JSONL — this hook is for
   // near-real-time statusline updates.
-  pi.on('tool_result', async () => {
-    // Token counting is done by reading the session transcript at
-    // session_stop time. This hook is a no-op; keeping it for future
-    // real-time accumulation if needed.
+  pi.on('tool_result', async (_event: unknown, ctx: ExtensionContext) => {
+    // Real-time status line refresh: every tool result updates the session
+    // token savings (read from the live transcript) so the status line
+    // reflects progress immediately instead of only at session_stop.
+    // Use the fresh ctx from the event — not the stale statusCtx.
+    updateStatusLine(ctx);
   });
 
   // ─── Session shutdown ─────────────────────────────────────────────────────
@@ -407,9 +427,9 @@ export default function cavemanExtension(pi: ExtensionAPI): void {
     handler: async (args: string, ctx: ExtensionCommandContext) => {
       const mode = parseCavemanModeArg(args) || 'full';
       setActiveMode(mode);
+      updateStatusLine(ctx);
       const instruction = getCavemanInstruction(mode);
       if (instruction) {
-        updateStatusLine(ctx);
         pi.sendMessage(
           `[System: Caveman mode set to "${mode}". ${instruction}]`,
           { deliverAs: 'steer' },
@@ -430,8 +450,9 @@ export default function cavemanExtension(pi: ExtensionAPI): void {
 
   pi.registerCommand('caveman-commit', {
     description: 'Generate conventional commit message',
-    handler: async (_args: string, _ctx: ExtensionCommandContext) => {
+    handler: async (_args: string, ctx: ExtensionCommandContext) => {
       setActiveMode('commit');
+      updateStatusLine(ctx);
       pi.sendMessage(
         'Caveman commit mode active. Generate conventional commit message (≤50 char subject, body only for non-obvious why).',
         { deliverAs: 'steer' },
@@ -442,8 +463,9 @@ export default function cavemanExtension(pi: ExtensionAPI): void {
   pi.registerCommand('caveman-review', {
     description: 'One-line code review comments',
     argumentHint: '<file-or-range>',
-    handler: async (_args: string, _ctx: ExtensionCommandContext) => {
+    handler: async (_args: string, ctx: ExtensionCommandContext) => {
       setActiveMode('review');
+      updateStatusLine(ctx);
       pi.sendMessage(
         'Caveman review mode active. One-line review comments: L<line>: <emoji> <severity>: <problem>. <fix>.',
         { deliverAs: 'steer' },
@@ -454,8 +476,9 @@ export default function cavemanExtension(pi: ExtensionAPI): void {
   pi.registerCommand('caveman-compress', {
     description: 'Compress memory file to caveman format',
     argumentHint: '<filepath>',
-    handler: async (_args: string, _ctx: ExtensionCommandContext) => {
+    handler: async (_args: string, ctx: ExtensionCommandContext) => {
       setActiveMode('compress');
+      updateStatusLine(ctx);
       pi.sendMessage(
         'Caveman compress mode active. Compress the specified file to caveman format. Preserve all code blocks, URLs, paths verbatim. Backup original as <file>.original.md.',
         { deliverAs: 'steer' },
