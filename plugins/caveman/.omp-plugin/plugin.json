@@ -1,0 +1,30 @@
+{
+  "name": "caveman",
+  "version": "0.1.0",
+  "description": "Oh My Pi 的 caveman 插件。marketplace 安装提供 skills/commands/agents；omp extension hooks 需另跑 scripts/install-omp.js 安装。",
+  "author": {
+    "name": "master0071",
+    "url": "https://github.com/zerosloney/caveman4cn"
+  },
+  "homepage": "https://github.com/zerosloney/caveman4cn",
+  "repository": "https://github.com/zerosloney/caveman4cn",
+  "license": "MIT",
+  "keywords": [
+    "productivity",
+    "communication",
+    "brevity",
+    "omp"
+  ],
+  "category": "productivity",
+  "commands": "./commands",
+  "agents": "./agents",
+  "skills": [
+    "./skills/caveman",
+    "./skills/caveman-commit",
+    "./skills/caveman-compress",
+    "./skills/caveman-help",
+    "./skills/caveman-review",
+    "./skills/caveman-stats",
+    "./skills/cavecrew"
+  ]
+}

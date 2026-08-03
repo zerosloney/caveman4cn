@@ -37,6 +37,7 @@ caveman4cn/
 ├── .zcode-plugin/marketplace.json       # ZCode 市场清单 → caveman
 ├── .codebuddy-plugin/marketplace.json   # CodeBuddy 市场清单 → caveman
 ├── .qoder-plugin/marketplace.json       # Qoder 市场清单 → caveman
+├── .omp-plugin/marketplace.json         # Oh My Pi 市场清单 → caveman（skills/commands/agents）
 ├── qwen-extension.json                  # Qwen Code 根级扩展清单（Qwen 约定：根目录）
 ├── cline/
 │   └── rules/
@@ -46,6 +47,7 @@ caveman4cn/
 │       ├── .zcode-plugin/plugin.json
 │       ├── .codebuddy-plugin/plugin.json
 │       ├── .qoder-plugin/plugin.json
+│       ├── .omp-plugin/plugin.json
 │       ├── qwen-extension.json
 │       └── hooks/                       # 唯一平台差异
 │           ├── zcode/
@@ -157,7 +159,14 @@ qodercli plugins install caveman
 
 ### Oh My Pi (omp)
 
+omp 支持两条安装路径：
+
 ```bash
+# 路径 A：marketplace（仅 skills/commands/agents，无 extension hooks）
+omp plugin marketplace add zerosloney/caveman4cn
+omp plugin install caveman@master0071
+
+# 路径 B：installer（铺扩展源码到 ~/.omp/agent/extensions/，含 omp extension hooks）
 node scripts/install-omp.js             # 安装
 node scripts/install-omp.js --dry-run   # 预览
 node scripts/install-omp.js --uninstall # 卸载
@@ -174,6 +183,8 @@ Oh My Pi 的扩展约定：安装器把扩展文件（TypeScript 源码）铺到
 Oh My Pi 没有 session 钩子机制——扩展通过 `index.ts` 在 agent 初始化时加载配置与技能，自动激活 caveman 模式。安装后重启 omp 或启动新会话即可生效。
 
 > **注意**：omp 不需要单独的安装器注册步骤——扩展文件到达 `extensions/` 目录后，omp 下次启动时自动发现。无需修改任何 settings.json。
+
+> **注意**：`omp plugin marketplace add` 只识别 `.omp-plugin/marketplace.json` 清单。marketplace 装的是 skills/commands/agents（caveman 模式可由 `/caveman` 命令或技能触发激活）；**extension hooks（mode-tracker、token 统计、状态行）需另跑路径 B 的 installer 铺源码到 `~/.omp/agent/extensions/caveman/`**。marketplace + installer 可共存，但 installer 路径是功能完整版。
 
 ### Cline
 
