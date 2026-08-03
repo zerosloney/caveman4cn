@@ -1,0 +1,10 @@
+{
+  "name": "caveman",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Caveman OMP plugin — ultra-compressed communication mode. Marketplace install entry point for extension hooks.",
+  "license": "MIT",
+  "omp": {
+    "extensions": ["./hooks/omp/index.ts"]
+  }
+}

@@ -5,13 +5,13 @@
     "email": "master0071@users.noreply.github.com"
   },
   "metadata": {
-    "description": "Caveman 插件市场（Oh My Pi）——超压缩通信模式。在 omp 添加本仓库以获取 caveman 插件（skills/commands/agents）。marketplace 安装不加载 omp extension hooks，需额外运行 scripts/install-omp.js 补全扩展。",
+    "description": "Caveman 插件市场（Oh My Pi）——超压缩通信模式。在 omp 添加本仓库以获取 caveman 插件（skills/commands/agents + extension hooks）。marketplace 安装即用，无需额外脚本。",
     "version": "0.1.0"
   },
   "plugins": [
     {
       "name": "caveman",
-      "description": "Oh My Pi 的超压缩通信模式。删废话，保技术准确。支持 lite、full、ultra、wenyan 强度级别。marketplace 安装提供 skills/commands/agents；extension hooks 需另跑 installer。",
+      "description": "Oh My Pi 的超压缩通信模式。删废话，保技术准确。支持 lite、full、ultra、wenyan 强度级别。marketplace 安装一键加载 skills/commands/agents/extension hooks。",
       "version": "0.1.0",
       "source": "./plugins/caveman",
       "category": "productivity",

@@ -162,6 +162,11 @@ function install(dryRun) {
   console.log(`  ${toPosix(EXTENSIONS_DIR)}`);
   console.log(`  Skills will be loaded from:`);
   console.log(`  ${toPosix(SKILLS_DIR)}`);
+  console.log(``);
+  console.log(`  💡 Marketplace install now works directly!`);
+  console.log(`     The plugin source now includes package.json with omp.extensions,`);
+  console.log(`     so future marketplace installs will load extension hooks automatically.`);
+  console.log(`     Run /marketplace update master0071 to refresh the cached plugin.`);
 }
 
 // ── 卸载 ────────────────────────────────────────────────────────────────
