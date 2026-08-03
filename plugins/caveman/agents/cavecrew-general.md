@@ -1,10 +1,6 @@
 ---
 name: cavecrew-general
-description: >
-  General-purpose caveman subagent. Complete tasks with caveman compression:
-  implement features, fix bugs, run commands, write tests. Output is ultra-terse.
-  Use when the main Agent needs to parallelize any work item.
-  中文：通用 caveman 子代理。完成带 caveman 压缩的任务：实现功能、修 bug、运行命令、写测试。输出极简。主 Agent 需并行任意工作项时使用。
+description: "General-purpose caveman subagent. Complete tasks with caveman compression: implement features, fix bugs, run commands, write tests. Output is ultra-terse. Use when the main Agent needs to parallelize any work item. 中文：通用 caveman 子代理。完成带 caveman 压缩的任务：实现功能、修 bug、运行命令、写测试。输出极简。主 Agent 需并行任意工作项时使用。"
 tools: [Read, Grep, Glob, Bash, Edit, Write]
 model: default
 ---

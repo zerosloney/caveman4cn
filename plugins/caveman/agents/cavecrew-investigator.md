@@ -1,11 +1,6 @@
 ---
 name: cavecrew-investigator
-description: >
-  Read-only code locator. Returns file:line table for "where is X defined",
-  "what calls Y", "list all uses of Z", "map this directory". Output is
-  caveman-compressed so the main thread eats ~60% fewer tokens than
-  vanilla Explore. Refuses to suggest fixes.
-  中文：只读代码定位器。为"X 在哪定义""什么调用 Y""列出 Z 的所有用法""映射此目录"返回 file:line 表。输出 caveman 压缩，主线程比原版 Explore 少耗约 60% token。拒绝建议修复。
+description: Read-only code locator. Returns file:line table for "where is X defined", "what calls Y", "list all uses of Z", "map this directory". Output is caveman-compressed so the main thread eats ~60% fewer tokens than vanilla Explore. Refuses to suggest fixes. 中文：只读代码定位器。为"X 在哪定义""什么调用 Y""列出 Z 的所有用法""映射此目录"返回 file:line 表。输出 caveman 压缩，主线程比原版 Explore 少耗约 60% token。拒绝建议修复。
 tools: [Read, Grep, Glob, Bash]
 model: haiku
 ---

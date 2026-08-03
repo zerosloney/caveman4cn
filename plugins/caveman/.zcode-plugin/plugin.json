@@ -1,6 +1,6 @@
 {
   "name": "caveman",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "ZCode 的超压缩通信模式。删废话，保技术准确。支持 lite、full、ultra、wenyan 强度级别。",
   "author": {
     "name": "master0071",

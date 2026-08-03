@@ -1,6 +1,6 @@
 {
   "name": "caveman",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "CodeBuddy 的 caveman 模式插件。为 CodeBuddy 代理提供超压缩通信。",
   "author": {
     "name": "master0071",

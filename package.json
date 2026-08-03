@@ -1,6 +1,6 @@
 {
   "name": "@master0071/caveman4cn",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "Unified Caveman plugin marketplace (master0071). One shared plugin source with platform-specific hooks for ZCode, CodeBuddy, Trae IDE, Qwen Code, Qoder, Oh My Pi, and Cline.",
   "license": "MIT",
   "author": {

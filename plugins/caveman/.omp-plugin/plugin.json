@@ -1,6 +1,6 @@
 {
   "name": "caveman",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "Oh My Pi 的 caveman 插件。marketplace 安装提供 skills/commands/agents；omp extension hooks 需另跑 scripts/install-omp.js 安装。",
   "author": {
     "name": "master0071",

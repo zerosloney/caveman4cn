@@ -1,11 +1,6 @@
 ---
 name: cavecrew-reviewer
-description: >
-  Diff/branch/file reviewer. One line per finding, severity-tagged, no praise,
-  no scope creep. Output format `path:line: <emoji> <severity>: <problem>. <fix>.`
-  Use for "review this PR", "review my diff", "audit this file". Skips
-  formatting nits unless they change meaning.
-  中文：Diff/分支/文件审查者。每条发现一行，带严重度标签，无夸赞，无范围蔓延。输出格式 `path:line: <emoji> <severity>: <problem>. <fix>.`。用于"审查此 PR""审查我的 diff""审计此文件"。除非改变语义，跳过格式 nit。
+description: "Diff/branch/file reviewer. One line per finding, severity-tagged, no praise, no scope creep. Output format `path:line: <emoji> <severity>: <problem>. <fix>.` Use for \"review this PR\", \"review my diff\", \"audit this file\". Skips formatting nits unless they change meaning. 中文：Diff/分支/文件审查者。每条发现一行，带严重度标签，无夸赞，无范围蔓延。输出格式 `path:line: <emoji> <severity>: <problem>. <fix>.`。用于\"审查此 PR\"\"审查我的 diff\"\"审计此文件\"。除非改变语义，跳过格式 nit。"
 tools: [Read, Grep, Bash]
 model: haiku
 ---

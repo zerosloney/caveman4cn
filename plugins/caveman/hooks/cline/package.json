@@ -1,6 +1,6 @@
 {
   "name": "@master0071/caveman-cline",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "Caveman mode plugin for Cline — ultra-compressed communication with full lifecycle hooks.",
   "license": "MIT",
   "author": {

@@ -1,12 +1,6 @@
 ---
 name: cavecrew-builder
-description: >
-  Surgical 1-2 file edit. Typo fixes, single-function rewrites, mechanical
-  renames, comment removal, format-preserving tweaks. Hard refuses 3+ file
-  scope. Returns caveman diff receipt. Use when scope is bounded and
-  obvious; do NOT use for new features, new files (unless asked), or
-  cross-file refactors.
-  中文：外科手术式 1-2 文件编辑。改错字、单函数重写、机械重命名、删注释、保格式微调。硬拒绝 3+ 文件范围。返回 caveman diff 回执。范围有界且显而易见时使用；不要用于新功能、新文件（除非被要求）或跨文件重构。
+description: Surgical 1-2 file edit. Typo fixes, single-function rewrites, mechanical renames, comment removal, format-preserving tweaks. Hard refuses 3+ file scope. Returns caveman diff receipt. Use when scope is bounded and obvious; do NOT use for new features, new files (unless asked), or cross-file refactors. 中文：外科手术式 1-2 文件编辑。改错字、单函数重写、机械重命名、删注释、保格式微调。硬拒绝 3+ 文件范围。返回 caveman diff 回执。范围有界且显而易见时使用；不要用于新功能、新文件（除非被要求）或跨文件重构。
 tools: [Read, Edit, Write, Grep, Glob]
 ---
 
