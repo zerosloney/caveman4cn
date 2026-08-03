@@ -169,9 +169,9 @@ function updateStatusLine(ctx: ExtensionContext): void {
   const session = computeStats({ lifetime: false, cwd: ctx.cwd });
 
   const parts = [`⛏ ${label}`];
-  // 当前会话节省
-  if (session.found && session.saved > 0) {
-    parts.push(`📊 ${fmtShort(session.saved)}`);
+  // 当前会话真实输入/输出
+  if (session.found && session.input > 0) {
+    parts.push(`📥${fmtShort(session.input)} 📤${fmtShort(session.output)}`);
   }
   // 已节省总量（始终显示）
   parts.push(`💰 ${fmtShort(lifetime)}`);
@@ -305,7 +305,7 @@ export default function cavemanExtension(pi: ExtensionAPI): void {
           const session = computeStats({ lifetime: false, cwd: ctx.cwd });
           let msg = `Caveman status: ${label} [${mode}] | lifetime: ${fmtShort(lifetime)} tokens`;
           if (session.found) {
-            msg += ` | session: ${fmtShort(session.saved)} saved / ${fmtShort(session.input + session.output)} total`;
+            msg += ` | session: ${fmtShort(session.input)} in / ${fmtShort(session.output)} out`;
           }
           pi.sendMessage(msg, { deliverAs: 'steer' });
           break;
@@ -505,7 +505,7 @@ export default function cavemanExtension(pi: ExtensionAPI): void {
       const session = computeStats({ lifetime: false, cwd: ctx.cwd });
       let msg = `Caveman status: ${label} [${mode}] | lifetime: ${fmtShort(lifetime)} tokens`;
       if (session.found) {
-        msg += ` | session: ${fmtShort(session.saved)} saved / ${fmtShort(session.input + session.output)} total`;
+        msg += ` | session: ${fmtShort(session.input)} in / ${fmtShort(session.output)} out`;
       }
       ctx.ui.notify(msg, 'info');
     },
