@@ -1,0 +1,47 @@
+{
+  "description": "Caveman Reasonix hooks. Reasonix uses Claude-style settings.json with a FLAT hook object schema: { event, match, command, description, timeout(ms), cwd }. timeout is in milliseconds (unlike Qoder/CodeBuddy which use seconds). match is anchored regex. The installer (scripts/install-reasonix.js) writes the absolute-path flat form into ~/.reasonix/settings.json; this file documents the same structure for reference.",
+  "SessionStart": [
+    {
+      "command": "node \"${REASONIX_PLUGIN_ROOT}/hooks/reasonix/session-start.js\"",
+      "description": "Activate caveman mode and inject compressed-communication rules",
+      "timeout": 10000
+    }
+  ],
+  "UserPromptSubmit": [
+    {
+      "command": "node \"${REASONIX_PLUGIN_ROOT}/hooks/reasonix/user-prompt.js\"",
+      "description": "Track caveman mode, handle /caveman commands, per-turn reinforcement",
+      "timeout": 10000
+    }
+  ],
+  "PreToolUse": [
+    {
+      "match": "Bash|Write|Edit|run_in_terminal|run_shell_command|execute_command|create_file|write_file|edit_file|multiedit",
+      "command": "node \"${REASONIX_PLUGIN_ROOT}/hooks/reasonix/pre-tool-use.js\"",
+      "description": "Block dangerous operations (rm -rf, system file writes, etc.)",
+      "timeout": 5000
+    }
+  ],
+  "PostToolUse": [
+    {
+      "match": "Bash|Write|Edit|run_in_terminal|run_shell_command|execute_command|create_file|write_file|edit_file|multiedit",
+      "command": "node \"${REASONIX_PLUGIN_ROOT}/hooks/reasonix/post-tool-use.js\"",
+      "description": "Warn when a tool returns a large response",
+      "timeout": 5000
+    }
+  ],
+  "PreCompact": [
+    {
+      "command": "node \"${REASONIX_PLUGIN_ROOT}/hooks/reasonix/pre-compact.js\"",
+      "description": "Inject caveman rules into compression guidance",
+      "timeout": 5000
+    }
+  ],
+  "Stop": [
+    {
+      "command": "node \"${REASONIX_PLUGIN_ROOT}/hooks/reasonix/stop.js\"",
+      "description": "Check caveman output quality and record session stats snapshot",
+      "timeout": 10000
+    }
+  ]
+}

@@ -1,14 +1,14 @@
 # shared/
 
-Single-source-of-truth templates for code that is duplicated across the five
-IDE plugin builds (`caveman-{codebuddy,qoder,qwen,trae,zcode}`).
+Single-source-of-truth templates for code that is duplicated across the six
+IDE plugin builds (`caveman-{codebuddy,qoder,qwen,trae,zcode,reasonix}`).
 
 ## Why this exists
 
-The five plugins each ship a near-identical `hooks/caveman-config.js`. Hand-syncing
-five copies drifted over time (comment typos, missing env hooks, stray blank
+The six plugins each ship a near-identical `hooks/caveman-config.js`. Hand-syncing
+six copies drifted over time (comment typos, missing env hooks, stray blank
 lines). This directory holds the **template**; a sync script regenerates the
-five plugin copies from it so they can never drift again.
+six plugin copies from it so they can never drift again.
 
 ## What lives here
 
@@ -36,7 +36,7 @@ The renderer is deliberately tiny (no dependency on a template engine).
 | `{{AGENT_LABEL}}` | Replaced with the human label for the header comment, e.g. `CodeBuddy`, `Qwen Code`. |
 | `{{#ZCODE_ENV}}...{{/ZCODE_ENV}}` | Conditional block. Kept (with the tags removed) only for the `zcode` build, whose `getCavemanRoot()` honors `process.env.ZCODE_PLUGIN_DATA`. Removed entirely for the other four builds. |
 
-To add a sixth IDE plugin: add an entry to the `AGENTS` array in
+To add a seventh IDE plugin: add an entry to the `AGENTS` array in
 `scripts/sync-shared.js` and re-run sync. No template change needed unless the
 new agent needs its own env override (in which case add another conditional
 block).
