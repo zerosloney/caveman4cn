@@ -28,3 +28,8 @@ context/refs/research-brief-caveman-code-efficiency.md
 # Build artifacts
 dist/*
 !dist/caveman.skill
+
+# Host-local session artifacts
+.reasonix/
+
+
