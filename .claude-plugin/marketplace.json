@@ -12,6 +12,19 @@
       "version": "0.1.1",
       "source": "./plugins/caveman",
       "category": "productivity",
+      "commands": "./commands",
+      "agents": "./agents",
+      "skills": [
+        "./skills/caveman",
+        "./skills/caveman-commit",
+        "./skills/caveman-compress",
+        "./skills/caveman-help",
+        "./skills/caveman-review",
+        "./skills/caveman-stats",
+        "./skills/cavecrew"
+      ],
+      "tools": "./tools",
+      "hooks": "./hooks/reasonix/hooks.json",
       "author": {
         "name": "master0071",
         "url": "https://github.com/zerosloney/caveman4cn"

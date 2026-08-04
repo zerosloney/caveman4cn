@@ -8,7 +8,9 @@
 //   npx -p @master0071/caveman4cn caveman-reasonix # npm 包入口
 //
 // 将 plugins/caveman/ 安装到 Reasonix：
-//   ~/.reasonix/plugins/caveman/  → 插件文件（含 skills/ + hooks/reasonix/）
+//   ~/.reasonix/plugins/caveman/  → 插件文件（含 agents/, assets/, commands/,
+//                                     hooks/reasonix/, rules/, scripts/, skills/,
+//                                     tools/）
 //   ~/.reasonix/settings.json     → 合并 hooks（6 事件，绝对路径）
 //
 // Reasonix hook schema (Claude-style, FLAT object — see DESKTOP_HOOKS.zh-CN.md):
@@ -41,6 +43,18 @@ const HOOKS_SRC_DIR = path.join(SRC_DIR, 'hooks', 'reasonix');
 const HOOKS_INSTALL_DIR = path.join(PLUGIN_DIR, 'hooks', 'reasonix');
 const SKILLS_SRC_DIR = path.join(__dirname, '..', 'skills');
 const SKILLS_INSTALL_DIR = path.join(PLUGIN_DIR, 'skills');
+
+// 需要完整复制到插件根目录的资产目录。
+// 只复制 hooks/ 和 skills/ 会导致 commands/agents/tools/assets/rules/scripts
+// 缺失，从而表现为 "已安装但未生效"。
+const ASSET_DIRS = [
+  'agents',
+  'assets',
+  'commands',
+  'rules',
+  'scripts',
+  'tools',
+];
 
 // 6 事件覆盖 caveman 全部逻辑。Reasonix 字段：command/match/description/timeout(ms)。
 // match 为 anchored 正则：Bash|Write|Edit 是 PascalCase 原生名，其余是常见
@@ -261,7 +275,20 @@ function install(dryRun) {
     }
   }
 
-  // 4. 合并 hooks 进 settings.json
+  // 4. 复制命令/代理/工具/资源/规则/脚本到插件根目录。
+  for (const dir of ASSET_DIRS) {
+    const srcDir = path.join(SRC_DIR, dir);
+    const destDir = path.join(PLUGIN_DIR, dir);
+    if (!fs.existsSync(srcDir)) continue;
+    console.log(`→ 复制 ${dir}/ 到 ${toPosix(destDir)}`);
+    if (!dryRun) {
+      copyDirRecursive(srcDir, destDir);
+      const count = countFiles(destDir);
+      console.log(`  installed: ${dir}/ (${count} files)`);
+    }
+  }
+
+  // 5. 合并 hooks 进 settings.json
   console.log(`\n→ 合并钩子到 ${toPosix(SETTINGS_FILE)}`);
   if (!dryRun) {
     const settings = readSettings();
@@ -274,8 +301,8 @@ function install(dryRun) {
   }
 
   console.log('\n✅ 安装完成。重启 Reasonix 后生效。');
-  console.log('   在会话中输入 /caveman 开启原始人模式');
   console.log('   SessionStart 事件会自动激活 caveman 并注入压缩通信规则。');
+  console.log('   若此前已安装，请先卸载后重装：node scripts/install-reasonix.js --uninstall && node scripts/install-reasonix.js');
 }
 
 // ── 卸载 ────────────────────────────────────────────────────────────────
