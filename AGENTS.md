@@ -11,7 +11,7 @@ Today's date is 2026-07-27.
 
 # Code organization
 
-The six IDE plugin builds (`plugins/caveman-{codebuddy,qoder,qwen,trae,zcode,reasonix}`)
+The five IDE plugin builds (`plugins/caveman-{codebuddy,qoder,qwen,trae,zcode}`)
 share most of their hook logic. To prevent the copies from drifting, the
 shared parts are generated from a single template.
 

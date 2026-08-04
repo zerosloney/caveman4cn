@@ -15,9 +15,8 @@
 - **Qoder** 运行 `install-qoder.js` → 安装 `caveman`
 - **Oh My Pi (omp)** 运行 `install-omp.js` → 安装 `caveman`
 - **Cline** 运行 `install-cline.js` → 安装 `caveman`（Rules + Skills）
-- **Reasonix** 运行 `install-reasonix.js` → 安装 `caveman`（Claude 风格 settings.json hooks）
 
-八个宿主各按自己的约定发现资产，互不干扰：
+七个宿主各按自己的约定发现资产，互不干扰：
 
 | 宿主 | 发现机制 | 加载的插件 |
 |------|---------|-----------|
@@ -28,9 +27,8 @@
 | Qoder | `.qoder-plugin/marketplace.json` + `plugins/caveman/.qoder-plugin/plugin.json`；安装器铺插件到 `~/.qoder/plugins/caveman/` + 合并 `~/.qoder/settings.json` | `caveman` |
 | Oh My Pi | 安装器铺扩展到 `~/.omp/agent/extensions/caveman/` + 技能到 `~/.omp/agent/skills/` | `caveman` |
 | Cline | 安装器铺规则到 `~/Documents/Cline/Rules/` + 技能到 `~/.cline/skills/`（或项目级 `.clinerules/` + `.cline/skills/`） | `caveman` |
-| Reasonix | `.reasonix-plugin/marketplace.json` + `.claude-plugin/marketplace.json` + `.claude-plugin/plugin.json`；安装器铺插件到 `~/.reasonix/plugins/caveman/` + 合并 `~/.reasonix/settings.json`（扁平 hook 对象，timeout 单位 ms） | `caveman` |
 
-ZCode 与 CodeBuddy 靠各自清单目录约定区分；Trae 没有 marketplace/plugin.json 概念，由安装器把 skills/commands/hooks/rules 铺到 `~/.trae-cn/` 全局约定位置；Qwen Code 由安装器把扩展铺到 `~/.qwen/extensions/caveman/`，并把钩子与状态行合并进 `~/.qwen/settings.json`；Qoder 由安装器把插件铺到 `~/.qoder/plugins/caveman/`（含 `.qoder-plugin/plugin.json` 清单），并把钩子合并进 `~/.qoder/settings.json`；Oh My Pi 由安装器把扩展文件（`index.ts`/`config.ts`/`stats.ts`/`package.json`）铺到 `~/.omp/agent/extensions/caveman/`，技能铺到 `~/.omp/agent/skills/`，omp 自动发现扩展并加载技能；Reasonix 由安装器把 hooks 与 skills 铺到 `~/.reasonix/plugins/caveman/`，并把扁平 hook 对象合并进 `~/.reasonix/settings.json`（Claude 风格，timeout 单位毫秒，`match` 为 anchored 正则）。公共源码只保留一份，平台差异位于 `plugins/caveman/hooks/<platform>/`。
+ZCode 与 CodeBuddy 靠各自清单目录约定区分；Trae 没有 marketplace/plugin.json 概念，由安装器把 skills/commands/hooks/rules 铺到 `~/.trae-cn/` 全局约定位置；Qwen Code 由安装器把扩展铺到 `~/.qwen/extensions/caveman/`，并把钩子与状态行合并进 `~/.qwen/settings.json`；Qoder 由安装器把插件铺到 `~/.qoder/plugins/caveman/`（含 `.qoder-plugin/plugin.json` 清单），并把钩子合并进 `~/.qoder/settings.json`；Oh My Pi 由安装器把扩展文件（`index.ts`/`config.ts`/`stats.ts`/`package.json`）铺到 `~/.omp/agent/extensions/caveman/`，技能铺到 `~/.omp/agent/skills/`，omp 自动发现扩展并加载技能。公共源码只保留一份，平台差异位于 `plugins/caveman/hooks/<platform>/`。
 
 ## 目录结构
 
@@ -40,9 +38,6 @@ caveman4cn/
 ├── .codebuddy-plugin/marketplace.json   # CodeBuddy 市场清单 → caveman
 ├── .qoder-plugin/marketplace.json       # Qoder 市场清单 → caveman
 ├── .omp-plugin/marketplace.json         # Oh My Pi 市场清单 → caveman（skills/commands/agents）
-├── .reasonix-plugin/marketplace.json    # Reasonix 市场清单 → caveman（Claude 风格 settings.json hooks）
-├── .claude-plugin/marketplace.json      # Reasonix/Claude marketplace 兼容清单
-├── .claude-plugin/plugin.json           # Reasonix/Claude plugin manifest
 ├── qwen-extension.json                  # Qwen Code 根级扩展清单（Qwen 约定：根目录）
 ├── cline/
 │   └── rules/
@@ -56,13 +51,6 @@ caveman4cn/
 │       ├── .omp-plugin/plugin.json
 │       ├── qwen-extension.json
 │       └── hooks/                       # 唯一平台差异
-│           ├── zcode/
-│           ├── codebuddy/
-│           ├── trae/
-│           ├── qwen/
-│           ├── qoder/
-│           ├── omp/
-│           └── reasonix/
 ├── skills/                              # 共享技能源（真理之源）
 ├── scripts/
 │   ├── install-zcode.js                 # 安装到 ZCode
@@ -71,8 +59,7 @@ caveman4cn/
 │   ├── install-qwen.js                  # 安装到 Qwen Code（铺到 ~/.qwen/extensions/）
 │   ├── install-qoder.js                 # 安装到 Qoder（铺到 ~/.qoder/plugins/）
 │   ├── install-omp.js                   # 安装到 Oh My Pi（铺到 ~/.omp/agent/extensions/）
-│   ├── install-cline.js                 # 安装到 Cline（铺到 ~/Documents/Cline/Rules/ + ~/.cline/skills/）
-│   └── install-reasonix.js              # 安装到 Reasonix（铺到 ~/.reasonix/plugins/caveman/）
+│   └── install-cline.js                 # 安装到 Cline（铺到 ~/Documents/Cline/Rules/ + ~/.cline/skills/）
 └── package.json                         # @master0071/caveman4cn
 ```
 
@@ -248,40 +235,6 @@ Plugin 状态存储在 `~/.caveman/cline/`：
 
 安装后重启 Cline 或新开一个会话。
 
-### Reasonix
-
-**推荐安装方式：脚本安装器**
-
-```bash
-node scripts/install-reasonix.js             # 安装
-node scripts/install-reasonix.js --dry-run   # 预览
-node scripts/install-reasonix.js --uninstall # 卸载
-```
-
-安装器把插件铺到 `~/.reasonix/plugins/caveman/`（hooks + skills），并把 6 个 hook 合并进 `~/.reasonix/settings.json`（标准 `{"hooks":{<Event>:[...]}}` 格式，扁平 hook 对象）。Reasonix 的 hook schema 是 Claude 风格但有 3 处关键差异（与 Qoder 不同）：
-
-- **timeout 单位是毫秒**（不是秒）—— 阻塞事件默认 5000ms，其它默认 30000ms
-- **`match` 是 anchored 正则**（不是子串）—— `"Bash"` 只匹配 `Bash`，不匹配 `run_bash`；要匹配所有工具用 `.*`
-- **字段是 `match` 不是 `matcher`，无 `type`/`hooks` 嵌套** —— 扁平 `{event, match, command, description, timeout, cwd}`
-
-阻塞语义：`PreToolUse` 和 `UserPromptSubmit` 是阻塞型事件，`exit 2` + stderr 阻断执行并把 stderr 喂给模型。危险操作拦截（`pre-tool-use.js`）和空 prompt 拦截都走这条路径。
-
-覆盖的 6 个事件：`SessionStart`（自动激活 + 注入规则）、`UserPromptSubmit`（模式切换 + 每轮强化）、`PreToolUse`（危险操作拦截）、`PostToolUse`（大响应提示）、`PreCompact`（压缩时保留 caveman 行为）、`Stop`（输出质量检查 + 统计快照）。
-
-安装后重启 Reasonix。
-
-> **注意**：如果通过 GitHub 仓库 URL 在 Reasonix 中直接安装插件时报错 `no installable manifest`，请改用上方脚本安装器。本仓库以脚本安装器为 Reasonix 的主安装路径。
-
-安装器把插件铺到 `~/.reasonix/plugins/caveman/`（hooks + skills），并把 6 个 hook 合并进 `~/.reasonix/settings.json`（标准 `{"hooks":{<Event>:[...]}}` 格式，扁平 hook 对象）。Reasonix 的 hook schema 是 Claude 风格但有 3 处关键差异（与 Qoder 不同）：
-
-- **timeout 单位是毫秒**（不是秒）—— 阻塞事件默认 5000ms，其它默认 30000ms
-- **`match` 是 anchored 正则**（不是子串）—— `"Bash"` 只匹配 `Bash`，不匹配 `run_bash`；要匹配所有工具用 `.*`
-- **字段是 `match` 不是 `matcher`，无 `type`/`hooks` 嵌套** —— 扁平 `{event, match, command, description, timeout, cwd}`
-
-阻塞语义：`PreToolUse` 和 `UserPromptSubmit` 是阻塞型事件，`exit 2` + stderr 阻断执行并把 stderr 喂给模型。危险操作拦截（`pre-tool-use.js`）和空 prompt 拦截都走这条路径。
-
-覆盖的 6 个事件：`SessionStart`（自动激活 + 注入规则）、`UserPromptSubmit`（模式切换 + 每轮强化）、`PreToolUse`（危险操作拦截）、`PostToolUse`（大响应提示）、`PreCompact`（压缩时保留 caveman 行为）、`Stop`（输出质量检查 + 统计快照）。
-
 ### 一键全部安装（通过 npm）
 
 ```bash
@@ -294,7 +247,7 @@ npx @master0071/caveman4cn
 npm run install:qwen
 ```
 
-也可直接运行 `npm run install:zcode`、`install:codebuddy`、`install:trae`、`install:qwen`、`install:qoder`、`install:omp`、`install:cline` 或 `install:reasonix`。
+也可直接运行 `npm run install:zcode`、`install:codebuddy`、`install:trae`、`install:qwen`、`install:qoder`、`install:omp` 或 `install:cline`。
 
 ## 使用
 

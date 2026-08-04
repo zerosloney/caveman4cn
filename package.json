@@ -1,7 +1,7 @@
 {
   "name": "@master0071/caveman4cn",
   "version": "0.1.1",
-  "description": "Unified Caveman plugin marketplace (master0071). One shared plugin source with platform-specific hooks for ZCode, CodeBuddy, Trae IDE, Qwen Code, Qoder, Oh My Pi, Cline, and Reasonix.",
+  "description": "Unified Caveman plugin marketplace (master0071). One shared plugin source with platform-specific hooks for ZCode, CodeBuddy, Trae IDE, Qwen Code, Qoder, Oh My Pi, and Cline.",
   "license": "MIT",
   "author": {
     "name": "master0071",
@@ -28,8 +28,7 @@
     "caveman-qwen": "./scripts/install-qwen.js",
     "caveman-qoder": "./scripts/install-qoder.js",
     "caveman-omp": "./scripts/install-omp.js",
-    "caveman-cline": "./scripts/install-cline.js",
-    "caveman-reasonix": "./scripts/install-reasonix.js"
+    "caveman-cline": "./scripts/install-cline.js"
   },
   "scripts": {
     "install:zcode": "node ./scripts/install-zcode.js",
@@ -39,7 +38,6 @@
     "install:qoder": "node ./scripts/install-qoder.js",
     "install:omp": "node ./scripts/install-omp.js",
     "install:cline": "node ./scripts/install-cline.js",
-    "install:reasonix": "node ./scripts/install-reasonix.js",
     "sync:shared": "node ./scripts/sync-shared.js",
     "postinstall": "node ./scripts/setup-git-hooks.js && node ./scripts/postinstall.js --check"
   },
@@ -52,7 +50,6 @@
     "scripts/install-qoder.js",
     "scripts/install-omp.js",
     "scripts/install-cline.js",
-    "scripts/install-reasonix.js",
     "scripts/postinstall.js",
     "scripts/sync-shared.js",
     "scripts/setup-git-hooks.js",
@@ -64,7 +61,6 @@
     ".qoder-plugin/marketplace.json",
     ".zcode-plugin/marketplace.json",
     ".omp-plugin/marketplace.json",
-    ".reasonix-plugin/marketplace.json",
     "marketplace.json",
     "AGENTS.md",
     "README.md",

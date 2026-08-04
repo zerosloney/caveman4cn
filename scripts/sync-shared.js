@@ -36,7 +36,6 @@ const AGENTS = [
   { id: 'qwen',      label: 'Qwen Code', zcodeEnv: false },
   { id: 'trae',      label: 'Trae',      zcodeEnv: false },
   { id: 'zcode',     label: 'ZCode',     zcodeEnv: true  },
-  { id: 'reasonix',  label: 'Reasonix',  zcodeEnv: false },
 ];
 
 // Render the template for one agent. Pure function — same input ⇒ same output.
