@@ -24,12 +24,10 @@ const { getAgentDataDir, getAgentLifetimeFile, getAgentSnapshotFile } = require(
 
 const homeDir = process.env.HOME || process.env.USERPROFILE || os.homedir() || '.';
 
-// Candidate transcript roots Reasonix might use. The first that exists wins.
-// Reasonix does not publicly document its transcript path. Guesses are based on:
-//   - Claude-Code-style layout (Reasonix CLI derives from that architecture):
-//     ~/.reasonix/projects/<encoded-project>/<id>.jsonl
-//   - common alternative names (sessions/logs/transcripts/history)
-// Order: most likely layouts first.
+// Candidate transcript roots Reasonix might use. Ordered by likelihood based
+// on Claude-Code-style derivations and common IDE transcript layouts.
+// We intentionally omit a bare ~/.reasonix/ fallback to avoid picking up
+// non-transcript JSON/JSONL files (settings, cache, command history).
 function candidateRoots() {
   return [
     path.join(homeDir, '.reasonix', 'projects'),
@@ -37,7 +35,6 @@ function candidateRoots() {
     path.join(homeDir, '.reasonix', 'logs'),
     path.join(homeDir, '.reasonix', 'transcripts'),
     path.join(homeDir, '.reasonix', 'history'),
-    path.join(homeDir, '.reasonix'),
   ];
 }
 
@@ -78,16 +75,48 @@ function listTranscripts() {
   return out;
 }
 
+function fileLooksLikeTranscript(file) {
+  try {
+    const stat = fs.statSync(file);
+    if (stat.size === 0) return false;
+
+    const fd = fs.openSync(file, 'r');
+    let buf;
+    try {
+      const toRead = Math.min(stat.size, 2000);
+      const offset = stat.size - toRead;
+      buf = Buffer.alloc(toRead);
+      fs.readSync(fd, buf, 0, toRead, offset);
+    } finally {
+      fs.closeSync(fd);
+    }
+
+    const text = buf.toString('utf-8');
+    const lines = text.split('\n').filter(line => line.trim());
+    if (!lines.length) return false;
+
+    // Peek at the tail for usage-like fields so we don't mistake
+    // settings/cache/history files for transcripts.
+    const sample = lines.slice(-5).join('\n');
+    return /"(inputTokens|outputTokens|prompt_tokens|completion_tokens|usage)"/.test(sample);
+  } catch {
+    return false;
+  }
+}
+
 function findCurrentTranscript() {
   let best = null;
+  let fallback = null;
   for (const file of listTranscripts()) {
     try {
       const stat = fs.statSync(file);
       if (stat.size === 0) continue;
+      if (!fallback || stat.mtimeMs > fallback.mtime) fallback = { full: file, mtime: stat.mtimeMs };
+      if (!fileLooksLikeTranscript(file)) continue;
       if (!best || stat.mtimeMs > best.mtime) best = { full: file, mtime: stat.mtimeMs };
     } catch {}
   }
-  return best ? best.full : null;
+  return best ? best.full : (fallback ? fallback.full : null);
 }
 
 function extractUsage(rec) {
@@ -254,8 +283,9 @@ function fmt(n) {
 function formatStats(stats) {
   if (!stats.found) {
     return 'No Reasonix session log found yet.\n' +
-      'Probed ~/.reasonix/{projects,sessions,logs,transcripts,history}/ but found no\n' +
-      'usage records. Run a few turns to populate the log, then /caveman-stats again.';
+      'Probed ~/.reasonix/{projects,sessions,logs,transcripts,history}/ for\n' +
+      'JSON/JSONL transcripts with usage fields, but found none. Run a few turns\n' +
+      'to populate the log, then /caveman-stats again.';
   }
   const scope = stats.lifetime ? 'Lifetime' : 'Session';
   const extra = (BASELINE_OUTPUT_MULTIPLIER - 1).toFixed(2);

@@ -1,5 +1,6 @@
 {
   "name": "master0071",
+  "version": "0.1.1",
   "description": "Reasonix 的 Caveman 插件市场——超压缩通信模式。在 Reasonix 添加本仓库以获取 caveman 插件（skills + Claude 风格 settings.json hooks）。",
   "owner": {
     "name": "master0071",
