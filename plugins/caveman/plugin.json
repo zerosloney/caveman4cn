@@ -1,20 +1,23 @@
 {
   "name": "caveman",
-  "displayName": "Caveman（Qoder 版）",
   "version": "0.1.1",
-  "description": "Qoder 的超压缩通信模式。删废话，保技术准确。支持 lite、full（默认）、ultra、wenyan-lite、wenyan-full、wenyan-ultra 强度级别。",
+  "description": "Reasonix 的超压缩通信模式。删废话，保技术准确。支持 lite、full、ultra、wenyan 强度级别。Claude 风格 hooks（SessionStart/UserPromptSubmit/PreToolUse/PostToolUse/PreCompact/Stop）自动激活。",
   "author": {
-    "name": "caveman4cn"
+    "name": "master0071",
+    "url": "https://github.com/zerosloney/caveman4cn"
   },
+  "homepage": "https://github.com/zerosloney/caveman4cn",
+  "repository": "https://github.com/zerosloney/caveman4cn",
+  "license": "MIT",
   "keywords": [
-    "qoder-plugin",
-    "caveman"
+    "productivity",
+    "communication",
+    "brevity",
+    "reasonix"
   ],
-  "category": "Coding",
-  "tags": [
-    "caveman",
-    "workflow"
-  ],
+  "category": "productivity",
+  "commands": "./commands",
+  "agents": "./agents",
   "skills": [
     "./skills/caveman",
     "./skills/caveman-commit",
@@ -24,6 +27,6 @@
     "./skills/caveman-stats",
     "./skills/cavecrew"
   ],
-  "marketplaceName": "local",
-  "defaultEnabled": true
+  "tools": "./tools",
+  "hooks": "./hooks/reasonix/hooks.json"
 }
